@@ -264,6 +264,15 @@ main{padding:22px;padding-bottom:max(28px,env(safe-area-inset-bottom));max-width
 .hist div:last-child{border-bottom:0}
 .hist div:hover{background:var(--panel-2)}
 
+.pkglist{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--bg-2);overflow:hidden;margin-bottom:14px;max-height:260px;overflow-y:auto}
+.pkgrow{padding:9px 11px;border-bottom:1px solid var(--line)}
+.pkgrow:last-child{border-bottom:0}
+.pkgrow .a{display:flex;align-items:center;gap:3px}
+.pkgrow .a .sp{flex:1}
+.pkgrow .a em{font-style:normal;font-size:11.5px;color:var(--ink-3);margin-right:5px}
+.pkgrow .b{font-size:11px;color:var(--ink-3);margin-top:3px;font-variant-numeric:tabular-nums}
+.pkgrow input.inl{width:44px;text-align:right;font-weight:700;font-size:13px}
+.pkgrow input.inl.amt{width:96px}
 input.inl{
   background:transparent;border:1px solid transparent;border-radius:7px;padding:3px 6px;outline:none;
   font-size:12.5px;transition:.14s;color:var(--ink)
@@ -275,7 +284,7 @@ input.inl:focus{border-color:var(--accent);background:var(--panel-2);box-shadow:
 #mask{position:fixed;inset:0;background:rgba(14,18,24,.5);z-index:60;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
 #mask.on{display:flex;animation:fade .16s ease}
 .modal{
-  background:var(--panel);border:1px solid var(--line-2);border-radius:18px;width:100%;max-width:490px;
+  background:var(--panel);border:1px solid var(--line-2);border-radius:18px;width:100%;max-width:520px;
   max-height:88vh;overflow:auto;padding:20px;box-shadow:var(--sh-lg);animation:pop .2s cubic-bezier(.3,1.3,.5,1)
 }
 @keyframes pop{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
@@ -1536,7 +1545,7 @@ function packageModal(memberId, back){
 function detailModal(id){
   const m = S.members.find(x=>x.id===id); if(!m) return;
   const st = memberState(id), ex = expireOf(id), dl = daysLeft(ex);
-  const pk = memPkgs(id).slice().reverse();
+  const pk = memPkgs(id).slice().sort((a,b) => (b.start_date||'')< (a.start_date||'') ? -1 : (b.start_date||'')>(a.start_date||'') ? 1 : b.id-a.id);
   const bk = memBks(id).slice().sort((a,b)=> +new Date(b.start_at) - +new Date(a.start_at)).slice(0,30);
   const paid = pk.reduce((s,p)=> s + (+p.price||0), 0);
 
@@ -1569,30 +1578,31 @@ function detailModal(id){
     <h2 style="font-size:13px">💳 결제 · 등록 이력 (누적 ${won(paid)}원)</h2>
 
     <div class="card" style="padding:10px 11px;margin-bottom:9px;background:var(--bg-2)">
-      <div class="row" style="gap:7px">
-        <label class="fld" style="flex:0 0 74px;margin:0"><span>회차</span>
+      <div style="display:grid;grid-template-columns:76px 1fr 100px;gap:8px">
+        <label class="fld" style="margin:0"><span>회차</span>
           <input id="q-total" class="num" type="text" inputmode="numeric" value="10" style="padding:7px 9px"></label>
-        <label class="fld" style="flex:1;min-width:110px;margin:0"><span>입금액(원)</span>
+        <label class="fld" style="margin:0"><span>입금액(원)</span>
           <input id="q-price" class="num" type="text" inputmode="numeric" placeholder="0" style="padding:7px 9px"></label>
-        <label class="fld" style="flex:0 0 96px;margin:0"><span>수단</span>
+        <label class="fld" style="margin:0"><span>수단</span>
           <select id="q-method" style="padding:7px 9px"><option>카드</option><option>현금</option><option>계좌이체</option><option>기타</option></select></label>
-        <button class="btn p" id="q-add" style="margin-top:19px">+ 추가</button>
       </div>
-      <div class="muted" style="font-size:11px;margin-top:7px">
-        오늘 날짜 · 만료 6개월로 등록됩니다. 날짜까지 지정하려면 <b>+ 회차 등록</b>을 쓰세요.</div>
+      <button class="btn p" id="q-add" style="width:100%;margin-top:9px">+ 결제 추가</button>
+      <div class="muted" style="font-size:11px;margin-top:7px;line-height:1.45">
+        오늘 날짜 · 만료 6개월로 등록됩니다. 날짜까지 정하려면 위 <b>+ 회차 등록</b>을 쓰세요.</div>
     </div>
 
-    <div class="hist" style="margin-bottom:14px">${
-      pk.length ? pk.map(p=>`<div>
-        <input class="num inl" data-ptotal="${p.id}" value="${p.total}" style="width:42px;text-align:right;font-weight:700">
-        <span class="muted" style="margin-left:-4px">회</span>
-        <span class="muted" style="font-size:11.5px">${p.start_date||''}~${p.expire_date||''}</span>
-        <span style="flex:1"></span>
-        <input class="num inl" data-pprice="${p.id}" value="${p.price||0}" style="width:92px;text-align:right;font-weight:700">
-        <span class="muted">원</span>
-        <span class="tag">${esc(p.method||'-')}</span>
-        <button class="btn sm d" data-delpkg="${p.id}">✕</button></div>`).join('')
-        : '<div class="muted">등록 이력이 없습니다. 위에서 바로 추가하세요.</div>'}</div>
+    <div class="pkglist">${
+      pk.length ? pk.map(p=>`<div class="pkgrow">
+        <div class="a">
+          <input class="num inl" data-ptotal="${p.id}" value="${p.total}"><em>회</em>
+          <span class="sp"></span>
+          <input class="num inl amt" data-pprice="${p.id}" value="${p.price||0}"><em>원</em>
+          <span class="tag">${esc(p.method||'-')}</span>
+          <button class="btn sm d" data-delpkg="${p.id}">✕</button>
+        </div>
+        <div class="b">${p.start_date||'—'} ~ ${p.expire_date||'—'}${p.memo?` · ${esc(p.memo)}`:''}</div>
+      </div>`).join('')
+        : '<div class="muted" style="padding:12px;font-size:13px">등록 이력이 없습니다. 위에서 바로 추가하세요.</div>'}</div>
 
     <h2 style="font-size:13px">📋 출결 이력</h2>
     <div class="hist">${
