@@ -251,14 +251,25 @@ main{padding:22px;padding-bottom:max(28px,env(safe-area-inset-bottom));max-width
   cursor:pointer;display:flex;gap:10px;align-items:center;box-shadow:var(--sh);transition:.15s
 }
 .mrow:hover{border-color:var(--accent);transform:translateY(-1px)}
-.mrow .nm{font-weight:700;font-size:15px;letter-spacing:-.02em}
-.mrow .sub{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.mrow{align-items:flex-start}
+.mrow .nm{font-weight:700;font-size:15.5px;letter-spacing:-.02em}
+.mrow .ph{font-size:12.5px;color:var(--ink-2);margin-top:3px;font-variant-numeric:tabular-nums}
+.mrow .dts{display:grid;grid-template-columns:auto 1fr;gap:1px 9px;margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line)}
+.mrow .dts dt{font-size:11px;color:var(--ink-3);font-weight:600}
+.mrow .dts dd{margin:0;font-size:11.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .big{font-size:21px;font-weight:800;text-align:right;line-height:1.1;font-variant-numeric:tabular-nums}
 .big small{display:block;font-size:10.5px;font-weight:600;color:var(--ink-3);margin-top:1px}
 .hist{max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--bg-2)}
 .hist div{padding:9px 12px;border-bottom:1px solid var(--line);font-size:12.5px;display:flex;gap:9px;align-items:center}
 .hist div:last-child{border-bottom:0}
 .hist div:hover{background:var(--panel-2)}
+
+input.inl{
+  background:transparent;border:1px solid transparent;border-radius:7px;padding:3px 6px;outline:none;
+  font-size:12.5px;transition:.14s;color:var(--ink)
+}
+input.inl:hover{border-color:var(--line-2);background:var(--panel-2)}
+input.inl:focus{border-color:var(--accent);background:var(--panel-2);box-shadow:0 0 0 3px var(--accent-soft)}
 
 /* ---------- 모달 ---------- */
 #mask{position:fixed;inset:0;background:rgba(14,18,24,.5);z-index:60;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
@@ -443,6 +454,15 @@ function usedCount(id){
 }
 function totalCount(id){ return memPkgs(id).reduce((s,p)=> s + (+p.total||0), 0); }
 function remain(id){ return totalCount(id) - usedCount(id); }
+function startOf(id){
+  const ds = memPkgs(id).map(p => p.start_date).filter(Boolean).sort();
+  return ds.length ? ds[ds.length-1] : null;
+}
+function firstJoin(id){
+  const m = S.members.find(x => x.id === id);
+  const ds = memPkgs(id).map(p => p.start_date).filter(Boolean).sort();
+  return ds.length ? ds[0] : (m && m.created_at ? String(m.created_at).slice(0,10) : null);
+}
 function expireOf(id){
   const ds = memPkgs(id).map(p=>p.expire_date).filter(Boolean).sort();
   return ds.length ? ds[ds.length-1] : null;
@@ -876,13 +896,18 @@ function renderMemList(){
     return;
   }
   wrap.innerHTML = `<div class="mlist">` + list.map(m => {
-    const st = memberState(m.id), ex = expireOf(m.id), dl = daysLeft(ex);
+    const st = memberState(m.id), ex = expireOf(m.id), dl = daysLeft(ex), sd = startOf(m.id);
+    const col = st.k==='ok'?'good':st.k==='warn'?'warn':'crit';
     return `<div class="mrow" data-m="${m.id}">
       <div style="flex:1;min-width:0">
         <div class="nm">${esc(m.name)} ${m.trainer?`<span class="tag" style="font-weight:600">${esc(m.trainer)}</span>`:''}</div>
-        <div class="sub">${esc(m.phone||'연락처 없음')}${ex?` · 만료 ${ex}${dl!==null?` (D${dl>=0?'-'+dl:'+'+(-dl)})`:''}`:''}</div>
+        <div class="ph">${esc(m.phone||'연락처 없음')}</div>
+        <dl class="dts">
+          <dt>등록일</dt><dd>${sd || '—'}</dd>
+          <dt>만료일</dt><dd>${ex ? `${ex}${dl!==null?` <span style="color:var(--${dl<0?'crit':dl<=14?'warn':'ink-3'});font-weight:700">D${dl>=0?'-'+dl:'+'+(-dl)}</span>`:''}` : '—'}</dd>
+        </dl>
       </div>
-      <div class="big" style="color:var(--${st.k==='ok'?'good':st.k==='warn'?'warn':'crit'})">
+      <div class="big" style="color:var(--${col})">
         ${remain(m.id)}<small>/ ${totalCount(m.id)}회</small>
       </div>
     </div>`;
@@ -1519,6 +1544,7 @@ function detailModal(id){
       <div style="flex:1">
         <h3 style="margin:0">${esc(m.name)}</h3>
         <div class="muted" style="font-size:13px">${esc(m.phone||'연락처 없음')}${m.trainer?' · '+esc(m.trainer):''}</div>
+        <div class="muted" style="font-size:11.5px;margin-top:2px">등록일 ${startOf(id)||'—'} · 만료일 ${ex||'—'}${firstJoin(id)&&firstJoin(id)!==startOf(id)?` · 최초등록 ${firstJoin(id)}`:''}</div>
       </div>
       <span class="tag ${st.k}">${st.t}</span>
     </div>
@@ -1541,13 +1567,32 @@ function detailModal(id){
     </div>
 
     <h2 style="font-size:13px">💳 결제 · 등록 이력 (누적 ${won(paid)}원)</h2>
+
+    <div class="card" style="padding:10px 11px;margin-bottom:9px;background:var(--bg-2)">
+      <div class="row" style="gap:7px">
+        <label class="fld" style="flex:0 0 74px;margin:0"><span>회차</span>
+          <input id="q-total" class="num" type="text" inputmode="numeric" value="10" style="padding:7px 9px"></label>
+        <label class="fld" style="flex:1;min-width:110px;margin:0"><span>입금액(원)</span>
+          <input id="q-price" class="num" type="text" inputmode="numeric" placeholder="0" style="padding:7px 9px"></label>
+        <label class="fld" style="flex:0 0 96px;margin:0"><span>수단</span>
+          <select id="q-method" style="padding:7px 9px"><option>카드</option><option>현금</option><option>계좌이체</option><option>기타</option></select></label>
+        <button class="btn p" id="q-add" style="margin-top:19px">+ 추가</button>
+      </div>
+      <div class="muted" style="font-size:11px;margin-top:7px">
+        오늘 날짜 · 만료 6개월로 등록됩니다. 날짜까지 지정하려면 <b>+ 회차 등록</b>을 쓰세요.</div>
+    </div>
+
     <div class="hist" style="margin-bottom:14px">${
       pk.length ? pk.map(p=>`<div>
-        <b>${p.total}회</b><span class="muted">${p.start_date||''} ~ ${p.expire_date||''}</span>
-        <span style="flex:1"></span><span>${won(p.price)}원</span>
+        <input class="num inl" data-ptotal="${p.id}" value="${p.total}" style="width:42px;text-align:right;font-weight:700">
+        <span class="muted" style="margin-left:-4px">회</span>
+        <span class="muted" style="font-size:11.5px">${p.start_date||''}~${p.expire_date||''}</span>
+        <span style="flex:1"></span>
+        <input class="num inl" data-pprice="${p.id}" value="${p.price||0}" style="width:92px;text-align:right;font-weight:700">
+        <span class="muted">원</span>
         <span class="tag">${esc(p.method||'-')}</span>
         <button class="btn sm d" data-delpkg="${p.id}">✕</button></div>`).join('')
-        : '<div class="muted">등록 이력이 없습니다.</div>'}</div>
+        : '<div class="muted">등록 이력이 없습니다. 위에서 바로 추가하세요.</div>'}</div>
 
     <h2 style="font-size:13px">📋 출결 이력</h2>
     <div class="hist">${
@@ -1565,6 +1610,40 @@ function detailModal(id){
   $('#d-pkg').onclick   = () => { closeModal(); packageModal(id); };
   $('#d-book').onclick  = () => { closeModal(); bookingModal(null, todayStr(), '10:00', id); };
   $$('[data-openbk]').forEach(el => el.onclick = () => { closeModal(); bookingModal(+el.dataset.openbk); });
+  // 빠른 결제 추가
+  $('#q-add').onclick = async () => {
+    const total = numOf('q-total', 0), price = numOf('q-price', 0);
+    if(total < 1) return toast('회차를 입력하세요');
+    const r = await T('crm_packages').insert({
+      member_id:id, total, price, method:$('#q-method').value,
+      start_date:todayStr(), expire_date:ymd(addDays(new Date(), 180)), memo:''
+    }).select().single();
+    if(r.error) return toast('오류: ' + r.error.message, 3600);
+    S.packages.push(r.data); render(); detailModal(id);
+    toast(`${total}회 / ${won(price)}원 추가 · 잔여 ${remain(id)}회`, 3000);
+  };
+
+  // 기존 이력 금액·회차 직접 수정 (칸에서 나가면 저장)
+  const inlSave = async (el, field) => {
+    const pid = +el.dataset[field === 'price' ? 'pprice' : 'ptotal'];
+    const pg = S.packages.find(x => x.id === pid); if(!pg) return;
+    const v = parseInt(String(el.value).replace(/[^0-9]/g,''), 10);
+    if(!Number.isFinite(v) || v === (+pg[field]||0)) { el.value = pg[field]||0; return; }
+    if(field === 'total' && v < 1) { el.value = pg.total; return toast('회차는 1 이상이어야 합니다'); }
+    const r = await T('crm_packages').update({ [field]: v }).eq('id', pid).select().single();
+    if(r.error){ el.value = pg[field]||0; return toast('오류: ' + r.error.message, 3600); }
+    Object.assign(pg, r.data); render(); detailModal(id);
+    toast(field === 'price' ? `금액 ${won(v)}원으로 수정` : `${v}회로 수정 · 잔여 ${remain(id)}회`, 2600);
+  };
+  $$('[data-pprice]').forEach(el => {
+    el.onchange = () => inlSave(el, 'price');
+    el.onkeydown = e => { if(e.key === 'Enter') el.blur(); };
+  });
+  $$('[data-ptotal]').forEach(el => {
+    el.onchange = () => inlSave(el, 'total');
+    el.onkeydown = e => { if(e.key === 'Enter') el.blur(); };
+  });
+
   $$('[data-delpkg]').forEach(el => el.onclick = async () => {
     if(!confirmDo('이 등록 이력을 삭제할까요? 잔여 회차가 줄어듭니다.')) return;
     const r = await T('crm_packages').delete().eq('id', +el.dataset.delpkg);
