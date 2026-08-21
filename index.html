@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0a0d12">
+<meta name="theme-color" content="#1a1f26">
 <title>PT 고객관리</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -18,25 +18,25 @@
 <meta name="apple-mobile-web-app-title" content="PT고객관리">
 <style>
 :root{
-  --bg:#0a0d12; --bg-2:#0d1117; --panel:#141922; --panel-2:#1b2230; --panel-3:#222b3b;
-  --line:#232b3a; --line-2:#2e394c;
-  --ink:#eef2f9; --ink-2:#98a5bd; --ink-3:#5f6c86; --ghost:#3d4759;
-  --accent:#22e39c; --accent-ink:#04241a; --accent-soft:rgba(34,227,156,.13);
-  --violet:#7d6bff; --violet-soft:rgba(125,107,255,.15);
-  --good:#22e39c; --warn:#ffb648; --crit:#ff5f70;
+  --bg:#1a1f26; --bg-2:#1f242c; --panel:#232932; --panel-2:#2b313b; --panel-3:#343b46;
+  --line:#333a45; --line-2:#424a56;
+  --ink:#dfe4ec; --ink-2:#9ba4b2; --ink-3:#737c8a; --ghost:#4d5663;
+  --accent:#79bfa4; --accent-ink:#0d2b20; --accent-soft:rgba(121,191,164,.11);
+  --violet:#948fca; --violet-soft:rgba(148,143,202,.12);
+  --good:#79bfa4; --warn:#d3a877; --crit:#cf838d;
   --r:14px; --r-sm:10px;
-  --sh:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
-  --sh-lg:0 24px 60px -20px rgba(0,0,0,.75);
-  --grad:linear-gradient(135deg,#22e39c,#3fd0ff);
+  --sh:0 1px 2px rgba(0,0,0,.14), 0 5px 14px -11px rgba(0,0,0,.3);
+  --sh-lg:0 18px 44px -20px rgba(0,0,0,.42);
+  --grad:linear-gradient(135deg,#79bfa4,#86b3c6);
 }
 @media (prefers-color-scheme:light){
   :root{
-    --bg:#f5f7fa; --bg-2:#eef1f6; --panel:#fff; --panel-2:#f3f6fa; --panel-3:#e9eef5;
-    --line:#e2e8f1; --line-2:#cfd8e6;
-    --ink:#0f1722; --ink-2:#5a6880; --ink-3:#8b98ad; --ghost:#b8c2d2;
-    --accent:#00b87c; --accent-ink:#fff; --accent-soft:rgba(0,184,124,.12);
-    --violet:#6355e6; --violet-soft:rgba(99,85,230,.12);
-    --good:#00b87c; --warn:#e08600; --crit:#e23d52;
+    --bg:#f7f8fa; --bg-2:#f1f3f7; --panel:#fff; --panel-2:#f4f6f9; --panel-3:#eaeef4;
+    --line:#e5e9ef; --line-2:#d3dae3;
+    --ink:#1b222c; --ink-2:#616b7a; --ink-3:#8e97a5; --ghost:#bcc4cf;
+    --accent:#4a9d80; --accent-ink:#fff; --accent-soft:rgba(74,157,128,.1);
+    --violet:#7d78b5; --violet-soft:rgba(125,120,181,.1);
+    --good:#4a9d80; --warn:#bb9155; --crit:#c07480;
     --sh:0 1px 2px rgba(16,32,64,.06), 0 8px 24px -14px rgba(16,32,64,.22);
     --sh-lg:0 24px 60px -22px rgba(16,32,64,.28);
   }
@@ -117,7 +117,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 #side .logo b{display:flex;align-items:center;gap:8px;font-size:15.5px;font-weight:800;letter-spacing:-.03em}
 #side .logo b::before{
   content:'';width:26px;height:26px;border-radius:8px;background:var(--grad);flex:0 0 26px;
-  box-shadow:0 3px 12px -3px var(--accent)
+  box-shadow:0 3px 10px -4px var(--accent)
 }
 #side .logo small{display:block;font-size:10.5px;color:var(--ink-3);margin-top:7px;padding-left:34px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -137,7 +137,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 #side nav button.on i{filter:none}
 #side nav button .badge{
   margin-left:auto;font-size:10.5px;font-weight:800;background:var(--crit);color:#fff;
-  border-radius:20px;padding:1px 7px;box-shadow:0 2px 8px -2px var(--crit)
+  border-radius:20px;padding:1px 7px;
 }
 #side nav hr{margin:9px 8px}
 #side .foot{padding:12px 14px;border-top:1px solid var(--line);font-size:11px;color:var(--ink-3)}
@@ -150,7 +150,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   border-bottom:1px solid var(--line);padding:10px 13px;padding-top:max(10px,env(safe-area-inset-top));
   align-items:center;gap:10px
 }
-@media (prefers-color-scheme:light){ #top{background:rgba(255,255,255,.85)} }
+@media (prefers-color-scheme:light){ #top{background:rgba(255,255,255,.88)} }
 #top .mtitle{font-weight:800;font-size:15.5px;letter-spacing:-.02em}
 #burger{font-size:19px;line-height:1;padding:3px 7px;border-radius:8px;color:var(--ink-2)}
 #burger:hover{background:var(--panel-2)}
@@ -195,10 +195,10 @@ main{padding:22px;padding-bottom:max(28px,env(safe-area-inset-bottom));max-width
 }
 .ev:hover{filter:brightness(1.12);z-index:6}
 .ev b{display:block;font-size:12px;font-weight:700;letter-spacing:-.02em}
-.ev.s예약{background:#5b4fd6;border-color:#a99cff}
-.ev.s완료{background:#0f9c6c;border-color:#4dffc0}
-.ev.s노쇼{background:#a3384a;border-color:#ff96a3}
-.ev.snone{background:#3f4859;border-color:#8894aa}
+.ev.s예약{background:#6a659f;border-color:#aca7dc}
+.ev.s완료{background:#448a70;border-color:#8fd0b6}
+.ev.s노쇼{background:#8f6069;border-color:#d9a3ab}
+.ev.snone{background:#4b545f;border-color:#8f97a3}
 .slot{position:absolute;left:0;right:0;cursor:pointer;transition:.1s}
 .slot:hover{background:var(--accent-soft)}
 .nowline{position:absolute;left:0;right:0;border-top:2px solid var(--crit);z-index:5;pointer-events:none}
@@ -218,10 +218,10 @@ main{padding:22px;padding-bottom:max(28px,env(safe-area-inset-bottom));max-width
 .mcell .d{font-size:12px;font-weight:700;margin-bottom:4px;color:var(--ink-3);font-variant-numeric:tabular-nums}
 .mcell.today .d{color:var(--accent-ink);background:var(--accent);display:inline-block;min-width:20px;text-align:center;border-radius:6px;padding:0 4px}
 .chip{display:block;font-size:10.5px;line-height:1.45;padding:1px 6px;border-radius:6px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;font-weight:600}
-.chip.s예약{background:#5b4fd6}
-.chip.s완료{background:#0f9c6c}
-.chip.s노쇼{background:#a3384a}
-.chip.snone{background:#3f4859}
+.chip.s예약{background:#6a659f}
+.chip.s완료{background:#448a70}
+.chip.s노쇼{background:#8f6069}
+.chip.snone{background:#4b545f}
 .more{font-size:10px;color:var(--ink-3);padding-left:4px;font-weight:600}
 @media(max-width:640px){ .mcell{min-height:74px;padding:3px} .chip{font-size:9.5px;padding:0 4px} .mcell .d{font-size:11px} }
 
@@ -261,7 +261,7 @@ main{padding:22px;padding-bottom:max(28px,env(safe-area-inset-bottom));max-width
 .hist div:hover{background:var(--panel-2)}
 
 /* ---------- 모달 ---------- */
-#mask{position:fixed;inset:0;background:rgba(4,7,12,.66);z-index:60;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+#mask{position:fixed;inset:0;background:rgba(14,18,24,.5);z-index:60;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
 #mask.on{display:flex;animation:fade .16s ease}
 .modal{
   background:var(--panel);border:1px solid var(--line-2);border-radius:18px;width:100%;max-width:490px;
@@ -1014,6 +1014,8 @@ function renderRev(){
     <button class="btn sm" id="rv-prev">◀</button>
     <b style="font-size:17px;min-width:78px;text-align:center">${Y}년</b>
     <button class="btn sm" id="rv-next" ${Y >= now.getFullYear() ? 'disabled style="opacity:.35"' : ''}>▶</button>
+    <span class="spacer"></span>
+    <button class="btn p" id="rv-add">+ 결제 등록</button>
   </div>
 
   <div class="row" style="gap:9px;margin-bottom:16px">
@@ -1066,6 +1068,7 @@ function renderRev(){
     </div>
   </div>`;
 
+  $('#rv-add').onclick  = () => pickMember('결제(회차) 등록할 회원', id => packageModal(id, false));
   $('#rv-prev').onclick = () => { S.revY--; renderRev(); };
   $('#rv-next').onclick = () => { if(S.revY < now.getFullYear()){ S.revY++; renderRev(); } };
 }
@@ -1244,7 +1247,7 @@ function renderBody(){
    운동이력
    ============================================================ */
 const PARTS = ['하체','가슴','등','어깨','팔','코어','전신','유산소'];
-const PCOL  = {하체:'#22e39c',가슴:'#ff5f70',등:'#3fd0ff',어깨:'#ffb648',팔:'#7d6bff',코어:'#12c9c0',전신:'#ff7ab8',유산소:'#8e9bb3'};
+const PCOL  = {하체:'#79bfa4',가슴:'#cf838d',등:'#86b3c6',어깨:'#d3a877',팔:'#948fca',코어:'#72b0ab',전신:'#c691ad',유산소:'#949cA8'};
 
 function renderWork(){
   if(!S.pick.work || !S.members.some(m => m.id === S.pick.work)) S.pick.work = S.members[0] && S.members[0].id;
@@ -1402,6 +1405,23 @@ const numOf = (id, def) => {
   return Number.isFinite(v) ? v : def;
 };
 
+function pickMember(title, cb){
+  if(!S.members.length){
+    openModal(`<h3>회원이 없습니다</h3><p class="muted">먼저 회원을 등록하세요.</p>
+      <div class="row" style="justify-content:flex-end"><button class="btn" id="pm-x">닫기</button>
+      <button class="btn p" id="pm-new">회원 등록</button></div>`);
+    $('#pm-x').onclick = closeModal;
+    $('#pm-new').onclick = () => { closeModal(); memberModal(null); };
+    return;
+  }
+  openModal(`<h3>${esc(title)}</h3>
+    <label class="fld"><span>회원</span><select id="pm-sel">${memberOptions(null)}</select></label>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" id="pm-x">취소</button><button class="btn p" id="pm-ok">다음</button></div>`);
+  $('#pm-x').onclick = closeModal;
+  $('#pm-ok').onclick = () => { const id = +$('#pm-sel').value; closeModal(); cb(id); };
+}
+
 function memberOptions(sel){
   return S.members.map(m => `<option value="${m.id}"${+sel===m.id?' selected':''}>${esc(m.name)} (잔여 ${remain(m.id)})</option>`).join('');
 }
@@ -1447,7 +1467,7 @@ function memberModal(id){
 }
 
 /* --- 회차 등록(결제) --- */
-function packageModal(memberId){
+function packageModal(memberId, back){
   const t = todayStr(), ex = ymd(addDays(new Date(), 180));
   openModal(`<h3>회차 등록 — ${esc(memName(memberId))}</h3>
     <label class="fld"><span>등록 회차 *</span><input id="p-total" class="num" type="text" inputmode="numeric" value="30"></label>
@@ -1455,7 +1475,12 @@ function packageModal(memberId){
       <button data-v="10">10회</button><button data-v="20">20회</button><button data-v="30">30회</button>
       <button data-v="50">50회</button><button data-v="100">100회</button>
     </div>
-    <label class="fld"><span>결제 금액(원)</span><input id="p-price" class="num" type="text" inputmode="numeric" value="0"></label>
+    <label class="fld"><span>결제 금액(원) — 입금액</span><input id="p-price" class="num" type="text" inputmode="numeric" value="0" placeholder="예: 2400000"></label>
+    <div class="presets" id="p-money">
+      <button data-v="500000">50만</button><button data-v="1000000">100만</button>
+      <button data-v="1500000">150만</button><button data-v="2000000">200만</button>
+      <button data-v="3000000">300만</button><button data-v="0">0</button>
+    </div>
     <div class="row">
       <label class="fld"><span>결제수단</span><select id="p-method"><option>카드</option><option>현금</option><option>계좌이체</option><option>기타</option></select></label>
       <label class="fld"><span>시작일</span><input id="p-start" type="date" value="${t}"></label>
@@ -1466,7 +1491,8 @@ function packageModal(memberId){
       <button class="btn" id="p-cancel">취소</button><button class="btn p" id="p-ok">등록</button>
     </div>`);
   $$('#p-preset button').forEach(b => b.onclick = () => { $('#p-total').value = b.dataset.v; });
-  $('#p-cancel').onclick = () => { closeModal(); detailModal(memberId); };
+  $$('#p-money button').forEach(b => b.onclick = () => { $('#p-price').value = b.dataset.v; });
+  $('#p-cancel').onclick = () => { closeModal(); if(back !== false) detailModal(memberId); };
   $('#p-ok').onclick = async () => {
     const total = numOf('p-total', 0);
     if(total < 1) return toast('회차를 입력하세요');
@@ -1475,8 +1501,9 @@ function packageModal(memberId){
       start_date:$('#p-start').value||null, expire_date:$('#p-exp').value||null, memo:$('#p-memo').value.trim()
     }).select().single();
     if(r.error) return toast('오류: ' + r.error.message, 3600);
-    S.packages.push(r.data); closeModal(); render(); toast(`${total}회 등록 완료`);
-    detailModal(memberId);
+    S.packages.push(r.data); closeModal(); render();
+    toast(`${memName(memberId)} · ${total}회 / ${won(numOf('p-price',0))}원 등록`, 3000);
+    if(back !== false) detailModal(memberId);
   };
 }
 
