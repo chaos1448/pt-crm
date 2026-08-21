@@ -21,22 +21,22 @@
   --bg:#12161d; --bg-2:#161b24; --panel:#1a202a; --panel-2:#222834; --panel-3:#2b323f;
   --line:#2a313d; --line-2:#39424f;
   --ink:#e6eaf1; --ink-2:#9aa4b4; --ink-3:#6c7684; --ghost:#454e5c;
-  --accent:#57c99a; --accent-ink:#08251a; --accent-soft:rgba(87,201,154,.12);
-  --violet:#8b85d6; --violet-soft:rgba(139,133,214,.13);
-  --good:#57c99a; --warn:#dfa85c; --crit:#dd7480;
+  --accent:#33d89e; --accent-ink:#05291d; --accent-soft:rgba(51,216,158,.14);
+  --violet:#7f76e0; --violet-soft:rgba(127,118,224,.15);
+  --good:#33d89e; --warn:#eeb055; --crit:#e86e7c;
   --r:14px; --r-sm:10px;
   --sh:0 1px 2px rgba(0,0,0,.22), 0 6px 18px -12px rgba(0,0,0,.45);
   --sh-lg:0 20px 50px -20px rgba(0,0,0,.55);
-  --grad:linear-gradient(135deg,#57c99a,#6bb6d6);
+  --grad:linear-gradient(135deg,#33d89e,#4fc4ea);
 }
 @media (prefers-color-scheme:light){
   :root{
     --bg:#f7f8fa; --bg-2:#f1f3f7; --panel:#fff; --panel-2:#f4f6f9; --panel-3:#eaeef4;
     --line:#e5e9ef; --line-2:#d3dae3;
     --ink:#1b222c; --ink-2:#616b7a; --ink-3:#8e97a5; --ghost:#bcc4cf;
-    --accent:#2f9e77; --accent-ink:#fff; --accent-soft:rgba(47,158,119,.11);
-    --violet:#6f68b8; --violet-soft:rgba(111,104,184,.11);
-    --good:#2f9e77; --warn:#c48a3a; --crit:#c9606c;
+    --accent:#17a97e; --accent-ink:#fff; --accent-soft:rgba(23,169,126,.12);
+    --violet:#6157cf; --violet-soft:rgba(97,87,207,.12);
+    --good:#17a97e; --warn:#d1912f; --crit:#d95264;
     --sh:0 1px 2px rgba(16,32,64,.06), 0 8px 24px -14px rgba(16,32,64,.22);
     --sh-lg:0 24px 60px -22px rgba(16,32,64,.28);
   }
@@ -195,10 +195,10 @@ main{padding:22px;padding-bottom:max(28px,env(safe-area-inset-bottom));max-width
 }
 .ev:hover{filter:brightness(1.12);z-index:6}
 .ev b{display:block;font-size:12px;font-weight:700;letter-spacing:-.02em}
-.ev.s예약{background:#5f5a9e;border-color:#a7a1e0}
-.ev.s완료{background:#2f7f61;border-color:#7fd9b4}
-.ev.s노쇼{background:#8e5560;border-color:#e0a0aa}
-.ev.snone{background:#454d5c;border-color:#8c95a5}
+.ev.s예약{background:#5a53bd;border-color:#a9a2ff}
+.ev.s완료{background:#1f8e68;border-color:#6fe0b6}
+.ev.s노쇼{background:#9a4a5a;border-color:#f0a0ac}
+.ev.snone{background:#434c5c;border-color:#8c95a5}
 .slot{position:absolute;left:0;right:0;cursor:pointer;transition:.1s}
 .slot:hover{background:var(--accent-soft)}
 .nowline{position:absolute;left:0;right:0;border-top:2px solid var(--crit);z-index:5;pointer-events:none}
@@ -218,10 +218,10 @@ main{padding:22px;padding-bottom:max(28px,env(safe-area-inset-bottom));max-width
 .mcell .d{font-size:12px;font-weight:700;margin-bottom:4px;color:var(--ink-3);font-variant-numeric:tabular-nums}
 .mcell.today .d{color:var(--accent-ink);background:var(--accent);display:inline-block;min-width:20px;text-align:center;border-radius:6px;padding:0 4px}
 .chip{display:block;font-size:10.5px;line-height:1.45;padding:1px 6px;border-radius:6px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;font-weight:600}
-.chip.s예약{background:#5f5a9e}
-.chip.s완료{background:#2f7f61}
-.chip.s노쇼{background:#8e5560}
-.chip.snone{background:#454d5c}
+.chip.s예약{background:#5a53bd}
+.chip.s완료{background:#1f8e68}
+.chip.s노쇼{background:#9a4a5a}
+.chip.snone{background:#434c5c}
 .more{font-size:10px;color:var(--ink-3);padding-left:4px;font-weight:600}
 @media(max-width:640px){ .mcell{min-height:74px;padding:3px} .chip{font-size:9.5px;padding:0 4px} .mcell .d{font-size:11px} }
 
@@ -1281,7 +1281,7 @@ function renderBody(){
    운동이력
    ============================================================ */
 const PARTS = ['하체','가슴','등','어깨','팔','코어','전신','유산소'];
-const PCOL  = {하체:'#57c99a',가슴:'#dd7480',등:'#6bb6d6',어깨:'#dfa85c',팔:'#8b85d6',코어:'#5cb8b2',전신:'#d288b0',유산소:'#8e97a5'};
+const PCOL  = {하체:'#33d89e',가슴:'#e86e7c',등:'#4fc4ea',어깨:'#eeb055',팔:'#7f76e0',코어:'#3fc2bb',전신:'#df84b4',유산소:'#8e97a5'};
 
 function renderWork(){
   if(!S.pick.work || !S.members.some(m => m.id === S.pick.work)) S.pick.work = S.members[0] && S.members[0].id;
