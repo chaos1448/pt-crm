@@ -45,6 +45,13 @@ a{color:var(--accent)}
   width:100%;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 11px;outline:none
 }
 .fld>input:focus,.fld>select:focus,.fld>textarea:focus{border-color:var(--accent)}
+/* 숫자 입력: 위아래 화살표 제거하고 직접 타이핑 */
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.presets{display:flex;gap:5px;flex-wrap:wrap;margin:-5px 0 11px}
+.presets button{padding:4px 11px;border-radius:7px;border:1px solid var(--line);background:var(--panel-2);font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.presets button:hover{border-color:var(--accent);color:var(--accent)}
 .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
 .row>.fld{flex:1;min-width:130px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:15px;box-shadow:var(--sh)}
@@ -100,6 +107,27 @@ main{padding:14px;padding-bottom:max(24px,env(safe-area-inset-bottom));max-width
 .slot{position:absolute;left:0;right:0;cursor:pointer}
 .slot:hover{background:rgba(76,141,255,.10)}
 .nowline{position:absolute;left:0;right:0;border-top:2px solid var(--crit);z-index:5;pointer-events:none}
+
+/* ---------- 월간 캘린더 ---------- */
+.seg{display:inline-flex;gap:3px;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:3px}
+.seg button{padding:5px 13px;border-radius:6px;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.seg button.on{background:var(--accent);color:#fff}
+.mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.mgrid .mh{padding:7px 4px;text-align:center;font-size:12px;font-weight:700;background:var(--panel-2);color:var(--ink-2);border-bottom:1px solid var(--line)}
+.mcell{min-height:98px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:5px 5px 7px;cursor:pointer;overflow:hidden}
+.mcell:nth-child(7n){border-right:0}
+.mcell:hover{background:rgba(76,141,255,.07)}
+.mcell.dim{opacity:.35}
+.mcell .d{font-size:12px;font-weight:700;margin-bottom:3px;color:var(--ink-2)}
+.mcell.today .d{color:var(--accent)}
+.mcell.today{background:rgba(76,141,255,.06)}
+.chip{display:block;font-size:11px;line-height:1.4;padding:1px 5px;border-radius:5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.chip.s예약{background:#2f5da8}
+.chip.s완료{background:#1f7a4d}
+.chip.s노쇼{background:#8d3535}
+.chip.snone{background:#4a5570}
+.more{font-size:10.5px;color:var(--ink-3);padding-left:3px}
+@media(max-width:640px){ .mcell{min-height:74px;padding:3px} .chip{font-size:9.5px;padding:0 3px} .mcell .d{font-size:11px} }
 
 /* ---------- 회원 ---------- */
 .mlist{display:grid;gap:9px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
@@ -189,7 +217,7 @@ const preset = () => !!(PRE.sb_url && PRE.sb_key && PRE.gcid);
 const S = {
   user:null, members:[], packages:[], bookings:[],
   gevents:[], unmatched:[],
-  anchor:null, days:7, view:'cal', q:'', gsync:'', syncing:false
+  anchor:null, mode:'week', view:'cal', q:'', gsync:'', syncing:false
 };
 let sb = null;
 
@@ -388,7 +416,7 @@ async function syncWindow(interactive){
   if(S.syncing) return;
   S.syncing = true; S.gsync = '동기화 중…'; paintSync();
 
-  const from = new Date(S.anchor), to = addDays(S.anchor, S.days);
+  const [from, to] = rangeOf();
   let items;
   try{
     await gtoken(interactive);
@@ -467,21 +495,45 @@ async function syncWindow(interactive){
    ============================================================ */
 function paintSync(){ const el = $('#sync'); if(el) el.textContent = S.gsync; }
 
-function renderCal(){
-  const c = cfg(), H0 = +c.h0, H1 = +c.h1, PXH = 52, H = (H1 - H0) * PXH;
-  const days = S.days, a = S.anchor;
-  const last = addDays(a, days-1);
-  const label = days === 1
-    ? `${a.getFullYear()}. ${md(a)} (${DOW[a.getDay()]})`
-    : `${a.getFullYear()}. ${md(a)} – ${md(last)}`;
+function rangeOf(){
+  const a = S.anchor;
+  if(S.mode === 'month') return [new Date(a.getFullYear(), a.getMonth(), 1), new Date(a.getFullYear(), a.getMonth()+1, 1)];
+  return [a, addDays(a, S.mode === 'week' ? 7 : 1)];
+}
+function anchorFor(mode, base){
+  const n = base || new Date();
+  if(mode === 'month') return new Date(n.getFullYear(), n.getMonth(), 1);
+  if(mode === 'week')  return monday(n);
+  return mkDate(ymd(n), '00:00');
+}
+function setMode(m, base){ S.mode = m; S.anchor = anchorFor(m, base); render(); syncWindow(false); }
+function shiftBy(dir){
+  const a = S.anchor;
+  S.anchor = S.mode === 'month'
+    ? new Date(a.getFullYear(), a.getMonth()+dir, 1)
+    : addDays(a, dir * (S.mode === 'week' ? 7 : 1));
+  render(); syncWindow(false);
+}
 
+function calLabel(){
+  const a = S.anchor;
+  if(S.mode === 'month') return `${a.getFullYear()}년 ${a.getMonth()+1}월`;
+  if(S.mode === 'day')   return `${a.getFullYear()}. ${md(a)} (${DOW[a.getDay()]})`;
+  return `${a.getFullYear()}. ${md(a)} – ${md(addDays(a,6))}`;
+}
+
+function renderCal(){
   let h = `<div class="calbar">
     <button class="btn sm" id="c-prev">◀</button>
     <button class="btn sm" id="c-today">오늘</button>
     <button class="btn sm" id="c-next">▶</button>
-    <span class="wk">${label}</span>
+    <span class="wk">${calLabel()}</span>
     <span class="spacer" style="flex:1"></span>
-    <button class="btn sm" id="c-mode">${days===7?'일간 보기':'주간 보기'}</button>
+    <span class="seg">
+      <button data-m="day"   class="${S.mode==='day'?'on':''}">일</button>
+      <button data-m="week"  class="${S.mode==='week'?'on':''}">주</button>
+      <button data-m="month" class="${S.mode==='month'?'on':''}">월</button>
+    </span>
     <button class="btn p sm" id="c-add">+ 예약</button>
   </div>`;
 
@@ -491,7 +543,53 @@ function renderCal(){
       + `</div></div>`;
   }
 
-  h += `<div class="grid" style="--days:${days}"><div class="gh"></div>`;
+  h += S.mode === 'month' ? monthHTML() : gridHTML();
+  $('#v-cal').innerHTML = h;
+
+  $('#c-prev').onclick  = () => shiftBy(-1);
+  $('#c-next').onclick  = () => shiftBy(1);
+  $('#c-today').onclick = () => setMode(S.mode);
+  $('#c-add').onclick   = () => bookingModal(null, todayStr(), '10:00');
+  $$('#v-cal .seg button').forEach(b => b.onclick = () => setMode(b.dataset.m, S.anchor));
+  $$('#v-cal .slot').forEach(el => el.onclick = ev => {
+    ev.stopPropagation(); bookingModal(null, el.closest('.col').dataset.day, el.dataset.t);
+  });
+  $$('#v-cal [data-bk]').forEach(el => el.onclick = ev => { ev.stopPropagation(); bookingModal(+el.dataset.bk); });
+  $$('#v-cal [data-link]').forEach(el => el.onclick = ev => { ev.stopPropagation(); linkModal(el.dataset.link); });
+  $$('#v-cal .mcell').forEach(el => el.onclick = () => setMode('day', mkDate(el.dataset.day,'00:00')));
+}
+
+/* --- 월간 --- */
+function monthHTML(){
+  const a = S.anchor, mo = a.getMonth();
+  const first = monday(new Date(a.getFullYear(), mo, 1));
+  const weeks = Math.ceil(((new Date(a.getFullYear(), mo+1, 0).getDate()) + ((new Date(a.getFullYear(), mo, 1).getDay()+6)%7)) / 7);
+
+  let h = `<div class="mgrid">` + DOW.slice(1).concat(DOW[0]).map(d => `<div class="mh">${d}</div>`).join('');
+  for(let i = 0; i < weeks*7; i++){
+    const d = addDays(first, i), key = ymd(d);
+    const dim = d.getMonth() !== mo, today = key === todayStr();
+    const items = S.bookings.filter(b => ymd(new Date(b.start_at)) === key)
+      .map(b => ({t:new Date(b.start_at), cls:'s'+b.status, txt:`${hm(new Date(b.start_at))} ${memName(b.member_id)}`, attr:`data-bk="${b.id}"`}))
+      .concat(S.unmatched.filter(u => ymd(u.s) === key)
+        .map(u => ({t:u.s, cls:'snone', txt:`${hm(u.s)} ${u.summary}`, attr:`data-link="${esc(u.id)}"`})))
+      .sort((x,y) => x.t - y.t);
+    const show = items.slice(0, 3);
+    h += `<div class="mcell${dim?' dim':''}${today?' today':''}" data-day="${key}">
+      <div class="d">${d.getDate()}</div>
+      ${show.map(i => `<span class="chip ${i.cls}" ${i.attr}>${esc(i.txt)}</span>`).join('')}
+      ${items.length > 3 ? `<div class="more">+${items.length-3}건</div>` : ''}
+    </div>`;
+  }
+  return h + `</div>`;
+}
+
+/* --- 일간 / 주간 --- */
+function gridHTML(){
+  const c = cfg(), H0 = +c.h0, H1 = +c.h1, PXH = 52, H = (H1 - H0) * PXH;
+  const days = S.mode === 'week' ? 7 : 1, a = S.anchor;
+
+  let h = `<div class="grid" style="--days:${days}"><div class="gh"></div>`;
   for(let i=0;i<days;i++){
     const d = addDays(a,i), t = ymd(d) === todayStr();
     h += `<div class="gh${t?' today':''}">${DOW[d.getDay()]}<b>${d.getDate()}</b></div>`;
@@ -513,16 +611,13 @@ function renderCal(){
       const n = new Date(), off = (n.getHours()+n.getMinutes()/60 - H0)*PXH;
       if(off >= 0 && off <= H) h += `<div class="nowline" style="top:${off}px"></div>`;
     }
-    const list = S.bookings.filter(b => ymd(new Date(b.start_at)) === key)
-                           .sort((x,y)=> +new Date(x.start_at) - +new Date(y.start_at));
-    for(const b of list){
+    for(const b of S.bookings.filter(b => ymd(new Date(b.start_at)) === key).sort((x,y)=> +new Date(x.start_at) - +new Date(y.start_at))){
       const s = new Date(b.start_at), e = new Date(b.end_at);
       const top = (s.getHours()+s.getMinutes()/60 - H0)*PXH;
       const hgt = Math.max(22, ((e-s)/36e5)*PXH - 2);
       if(top < -30 || top > H) continue;
       h += `<div class="ev s${b.status}" data-bk="${b.id}" style="top:${top}px;height:${hgt}px">
-              <b>${esc(memName(b.member_id))}</b>${hm(s)}–${hm(e)}${b.status!=='예약'?' · '+b.status:''}
-            </div>`;
+              <b>${esc(memName(b.member_id))}</b>${hm(s)}–${hm(e)}${b.status!=='예약'?' · '+b.status:''}</div>`;
     }
     for(const u of S.unmatched.filter(u => ymd(u.s) === key)){
       const top = (u.s.getHours()+u.s.getMinutes()/60 - H0)*PXH;
@@ -533,36 +628,17 @@ function renderCal(){
     }
     h += `</div>`;
   }
-  h += `</div>`;
-  $('#v-cal').innerHTML = h;
-
-  $('#c-prev').onclick  = () => { S.anchor = addDays(S.anchor, -S.days); render(); syncWindow(false); };
-  $('#c-next').onclick  = () => { S.anchor = addDays(S.anchor,  S.days); render(); syncWindow(false); };
-  $('#c-today').onclick = () => { S.anchor = S.days===7 ? monday(new Date()) : mkDate(todayStr(),'00:00'); render(); syncWindow(false); };
-  $('#c-mode').onclick  = () => { S.days = S.days===7?1:7; S.anchor = S.days===7 ? monday(new Date()) : mkDate(todayStr(),'00:00'); render(); syncWindow(false); };
-  $('#c-add').onclick   = () => bookingModal(null, todayStr(), '10:00');
-  $$('#v-cal .slot').forEach(el => el.onclick = ev => {
-    ev.stopPropagation();
-    bookingModal(null, el.closest('.col').dataset.day, el.dataset.t);
-  });
-  $$('#v-cal .ev[data-bk]').forEach(el => el.onclick = ev => {
-    ev.stopPropagation(); bookingModal(+el.dataset.bk);
-  });
-  $$('#v-cal [data-link]').forEach(el => el.onclick = ev => {
-    ev.stopPropagation(); linkModal(el.dataset.link);
-  });
+  return h + `</div>`;
 }
 
 /* ============================================================
    렌더 — 회원
    ============================================================ */
 function renderMem(){
-  const q = S.q.trim().toLowerCase();
-  const list = S.members.filter(m => !q || (m.name+' '+(m.phone||'')+' '+(m.trainer||'')).toLowerCase().includes(q));
-  const act = S.members.filter(m=>m.active !== false).length;
+  const act = S.members.filter(m => m.active !== false).length;
   const low = S.members.filter(m => memberState(m.id).k !== 'ok').length;
 
-  let h = `<div class="row" style="margin-bottom:12px">
+  $('#v-mem').innerHTML = `<div class="row" style="margin-bottom:12px">
     <input id="q" placeholder="이름 · 연락처 · 트레이너 검색" value="${esc(S.q)}"
       style="flex:1;min-width:180px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 12px;outline:none">
     <button class="btn p" id="m-add">+ 회원 등록</button>
@@ -571,29 +647,44 @@ function renderMem(){
     <span class="tag">전체 ${S.members.length}명</span>
     <span class="tag ok">활성 ${act}명</span>
     <span class="tag warn">재등록/만료 임박 ${low}명</span>
-  </div>`;
+  </div>
+  <div id="mwrap"></div>`;
+
+  const qi = $('#q');
+  // 한글 IME: 조합 중에는 목록을 다시 그리지 않는다 (입력창을 건드리면 조합이 끊김)
+  let composing = false;
+  qi.addEventListener('compositionstart', () => { composing = true; });
+  qi.addEventListener('compositionend',   () => { composing = false; S.q = qi.value; renderMemList(); });
+  qi.addEventListener('input', () => { if(composing) return; S.q = qi.value; renderMemList(); });
+
+  $('#m-add').onclick = () => memberModal(null);
+  renderMemList();
+}
+
+// 목록만 다시 그린다 — 검색 입력창은 손대지 않음
+function renderMemList(){
+  const wrap = $('#mwrap'); if(!wrap) return;
+  const q = S.q.trim().toLowerCase();
+  const list = S.members.filter(m => !q || (m.name+' '+(m.phone||'')+' '+(m.trainer||'')).toLowerCase().includes(q));
 
   if(!list.length){
-    h += `<div class="card muted" style="text-align:center;padding:34px">${S.members.length ? '검색 결과가 없습니다.' : '아직 등록된 회원이 없습니다. <b>+ 회원 등록</b>으로 시작하세요.'}</div>`;
-  } else {
-    h += `<div class="mlist">` + list.map(m => {
-      const st = memberState(m.id), ex = expireOf(m.id), dl = daysLeft(ex);
-      return `<div class="mrow" data-m="${m.id}">
-        <div style="flex:1;min-width:0">
-          <div class="nm">${esc(m.name)} ${m.trainer?`<span class="tag" style="font-weight:600">${esc(m.trainer)}</span>`:''}</div>
-          <div class="sub">${esc(m.phone||'연락처 없음')}${ex?` · 만료 ${ex}${dl!==null?` (D${dl>=0?'-'+dl:'+'+(-dl)})`:''}`:''}</div>
-        </div>
-        <div class="big" style="color:var(--${st.k==='ok'?'good':st.k==='warn'?'warn':'crit'})">
-          ${remain(m.id)}<small>/ ${totalCount(m.id)}회</small>
-        </div>
-      </div>`;
-    }).join('') + `</div>`;
+    wrap.innerHTML = `<div class="card muted" style="text-align:center;padding:34px">${
+      S.members.length ? '검색 결과가 없습니다.' : '아직 등록된 회원이 없습니다. <b>+ 회원 등록</b>으로 시작하세요.'}</div>`;
+    return;
   }
-  $('#v-mem').innerHTML = h;
-  const qi = $('#q');
-  qi.oninput = () => { S.q = qi.value; renderMem(); const n=$('#q'); n.focus(); n.setSelectionRange(n.value.length,n.value.length); };
-  $('#m-add').onclick = () => memberModal(null);
-  $$('#v-mem .mrow').forEach(el => el.onclick = () => detailModal(+el.dataset.m));
+  wrap.innerHTML = `<div class="mlist">` + list.map(m => {
+    const st = memberState(m.id), ex = expireOf(m.id), dl = daysLeft(ex);
+    return `<div class="mrow" data-m="${m.id}">
+      <div style="flex:1;min-width:0">
+        <div class="nm">${esc(m.name)} ${m.trainer?`<span class="tag" style="font-weight:600">${esc(m.trainer)}</span>`:''}</div>
+        <div class="sub">${esc(m.phone||'연락처 없음')}${ex?` · 만료 ${ex}${dl!==null?` (D${dl>=0?'-'+dl:'+'+(-dl)})`:''}`:''}</div>
+      </div>
+      <div class="big" style="color:var(--${st.k==='ok'?'good':st.k==='warn'?'warn':'crit'})">
+        ${remain(m.id)}<small>/ ${totalCount(m.id)}회</small>
+      </div>
+    </div>`;
+  }).join('') + `</div>`;
+  $$('#mwrap .mrow').forEach(el => el.onclick = () => detailModal(+el.dataset.m));
 }
 
 /* ============================================================
@@ -618,9 +709,9 @@ function renderSet(){
   <div class="card" style="margin-bottom:12px">
     <h2>⚙️ 동작</h2>
     <div class="row">
-      <label class="fld"><span>기본 수업시간(분)</span><input id="s-dur" type="number" min="10" step="5" value="${c.dur}"></label>
-      <label class="fld"><span>표시 시작시각</span><input id="s-h0" type="number" min="0" max="23" value="${c.h0}"></label>
-      <label class="fld"><span>표시 종료시각</span><input id="s-h1" type="number" min="1" max="24" value="${c.h1}"></label>
+      <label class="fld"><span>기본 수업시간(분)</span><input id="s-dur" class="num" type="text" inputmode="numeric" value="${c.dur}"></label>
+      <label class="fld"><span>표시 시작시각</span><input id="s-h0" class="num" type="text" inputmode="numeric" value="${c.h0}"></label>
+      <label class="fld"><span>표시 종료시각</span><input id="s-h1" class="num" type="text" inputmode="numeric" value="${c.h1}"></label>
     </div>
     <label class="fld" style="display:flex;gap:9px;align-items:center">
       <input type="checkbox" id="s-noshow" ${c.noshow?'checked':''} style="width:auto"><span style="margin:0">노쇼도 잔여횟수에서 차감</span></label>
@@ -644,7 +735,7 @@ function renderSet(){
     location.reload();
   };
   $('#s-save2').onclick = () => {
-    setCfg({ dur:+$('#s-dur').value||50, h0:+$('#s-h0').value||6, h1:+$('#s-h1').value||23,
+    setCfg({ dur:numOf('s-dur',50), h0:numOf('s-h0',6), h1:numOf('s-h1',23),
              noshow:$('#s-noshow').checked, automatch:$('#s-auto').checked });
     toast('저장했습니다'); render();
   };
@@ -671,6 +762,19 @@ function closeModal(){ $('#mask').classList.remove('on'); $('#modal').innerHTML=
 function openModal(html){ $('#modal').innerHTML = html; $('#mask').classList.add('on'); }
 $('#mask').onclick = e => { if(e.target.id === 'mask') closeModal(); };
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+// 숫자 칸을 누르면 기존 값이 전체 선택돼 바로 새 숫자를 칠 수 있게
+document.addEventListener('focusin', e => {
+  if(e.target.matches('input.num')) setTimeout(() => { try{ e.target.select(); }catch(_){} }, 0);
+});
+document.addEventListener('input', e => {                 // 숫자 외 문자는 걸러낸다
+  if(!e.target.matches('input.num')) return;
+  const clean = e.target.value.replace(/[^0-9]/g, '');
+  if(clean !== e.target.value) e.target.value = clean;
+});
+const numOf = (id, def) => {
+  const v = parseInt(String(($('#'+id) || {}).value || '').replace(/[^0-9]/g, ''), 10);
+  return Number.isFinite(v) ? v : def;
+};
 
 function memberOptions(sel){
   return S.members.map(m => `<option value="${m.id}"${+sel===m.id?' selected':''}>${esc(m.name)} (잔여 ${remain(m.id)})</option>`).join('');
@@ -720,10 +824,12 @@ function memberModal(id){
 function packageModal(memberId){
   const t = todayStr(), ex = ymd(addDays(new Date(), 180));
   openModal(`<h3>회차 등록 — ${esc(memName(memberId))}</h3>
-    <div class="row">
-      <label class="fld"><span>등록 회차 *</span><input id="p-total" type="number" min="1" value="30"></label>
-      <label class="fld"><span>결제 금액(원)</span><input id="p-price" type="number" min="0" step="10000" value="0"></label>
+    <label class="fld"><span>등록 회차 *</span><input id="p-total" class="num" type="text" inputmode="numeric" value="30"></label>
+    <div class="presets" id="p-preset">
+      <button data-v="10">10회</button><button data-v="20">20회</button><button data-v="30">30회</button>
+      <button data-v="50">50회</button><button data-v="100">100회</button>
     </div>
+    <label class="fld"><span>결제 금액(원)</span><input id="p-price" class="num" type="text" inputmode="numeric" value="0"></label>
     <div class="row">
       <label class="fld"><span>결제수단</span><select id="p-method"><option>카드</option><option>현금</option><option>계좌이체</option><option>기타</option></select></label>
       <label class="fld"><span>시작일</span><input id="p-start" type="date" value="${t}"></label>
@@ -733,12 +839,13 @@ function packageModal(memberId){
     <div class="row" style="justify-content:flex-end;margin-top:6px">
       <button class="btn" id="p-cancel">취소</button><button class="btn p" id="p-ok">등록</button>
     </div>`);
+  $$('#p-preset button').forEach(b => b.onclick = () => { $('#p-total').value = b.dataset.v; });
   $('#p-cancel').onclick = () => { closeModal(); detailModal(memberId); };
   $('#p-ok').onclick = async () => {
-    const total = +$('#p-total').value || 0;
+    const total = numOf('p-total', 0);
     if(total < 1) return toast('회차를 입력하세요');
     const r = await T('crm_packages').insert({
-      member_id:memberId, total, price:+$('#p-price').value||0, method:$('#p-method').value,
+      member_id:memberId, total, price:numOf('p-price', 0), method:$('#p-method').value,
       start_date:$('#p-start').value||null, expire_date:$('#p-exp').value||null, memo:$('#p-memo').value.trim()
     }).select().single();
     if(r.error) return toast('오류: ' + r.error.message, 3600);
@@ -838,7 +945,7 @@ function bookingModal(bkId, dateStr, timeStr, presetMember){
     <div class="row">
       <label class="fld"><span>날짜</span><input id="b-date" type="date" value="${ymd(s)}"></label>
       <label class="fld"><span>시작</span><input id="b-time" type="time" step="300" value="${hm(s)}"></label>
-      <label class="fld"><span>시간(분)</span><input id="b-dur" type="number" min="10" step="5" value="${dur}"></label>
+      <label class="fld"><span>시간(분)</span><input id="b-dur" class="num" type="text" inputmode="numeric" value="${dur}"></label>
     </div>
     <label class="fld"><span>메모</span><input id="b-memo" value="${esc(b?.memo||'')}"></label>
     ${b?`<div class="row" style="margin:4px 0 12px">
@@ -857,7 +964,7 @@ function bookingModal(bkId, dateStr, timeStr, presetMember){
   $('#b-ok').onclick = async () => {
     const memId = +$('#b-mem').value;
     const st = mkDate($('#b-date').value, $('#b-time').value);
-    const en = new Date(+st + (+$('#b-dur').value||50)*60000);
+    const en = new Date(+st + numOf('b-dur', +cfg().dur)*60000);
     if(isNaN(+st)) return toast('날짜/시간을 확인하세요');
     if(!b && remain(memId) <= 0 && !confirmDo(`${memName(memId)} 회원은 잔여 회차가 없습니다. 그래도 예약할까요?`)) return;
     const row = { member_id:memId, start_at:st.toISOString(), end_at:en.toISOString(), memo:$('#b-memo').value.trim() };
@@ -993,8 +1100,8 @@ async function boot(){
 
   $('#gate').style.display = 'none';
   $('#app').style.display  = 'block';
-  S.anchor = monday(new Date());
-  if(window.innerWidth < 700) { S.days = 1; S.anchor = mkDate(todayStr(),'00:00'); }
+  S.mode = window.innerWidth < 700 ? 'day' : 'week';
+  S.anchor = anchorFor(S.mode);
 
   try{ await loadAll(); }
   catch(e){ return showGate('데이터를 읽지 못했습니다: ' + esc(e.message) + '<br>schema.sql 실행 여부와 키를 확인하세요.'); }
