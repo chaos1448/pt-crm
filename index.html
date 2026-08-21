@@ -129,6 +129,23 @@ main{padding:14px;padding-bottom:max(24px,env(safe-area-inset-bottom));max-width
 .more{font-size:10.5px;color:var(--ink-3);padding-left:3px}
 @media(max-width:640px){ .mcell{min-height:74px;padding:3px} .chip{font-size:9.5px;padding:0 3px} .mcell .d{font-size:11px} }
 
+/* ---------- 연간 ---------- */
+.ygrid{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(212px,1fr))}
+.ym{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 11px 11px}
+.ym .hd{display:flex;align-items:baseline;gap:7px;cursor:pointer}
+.ym .hd b{font-size:14px}
+.ym .hd small{font-size:11px;color:var(--ink-3);font-weight:600}
+.ym .hd:hover b{color:var(--accent)}
+.ym.cur{border-color:var(--accent)}
+.dg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:7px}
+.dg i{font-size:9px;font-style:normal;text-align:center;color:var(--ink-3);padding-bottom:1px}
+.dg u{font-size:10.5px;text-decoration:none;text-align:center;padding:3px 0;border-radius:4px;color:var(--ink-2);cursor:pointer}
+.dg u.off{opacity:.2;cursor:default}
+.dg u.has{color:#fff;font-weight:700}
+.dg u.today{outline:1.5px solid var(--accent);outline-offset:-1px}
+.dg u:hover{background:rgba(76,141,255,.25)}
+@media(max-width:640px){ .ygrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px} .ym{padding:8px} }
+
 /* ---------- 회원 ---------- */
 .mlist{display:grid;gap:9px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 .mrow{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;display:flex;gap:10px;align-items:center}
@@ -413,6 +430,7 @@ function findMemberBySummary(sum){
 async function syncWindow(interactive){
   const c = cfg();
   if(!c.gcid){ S.gsync = '구글 미연동'; return; }
+  if(S.mode === 'year'){ S.gsync = '연간 보기 · 구글 동기화 생략'; S.unmatched = []; return; }
   if(S.syncing) return;
   S.syncing = true; S.gsync = '동기화 중…'; paintSync();
 
@@ -497,11 +515,13 @@ function paintSync(){ const el = $('#sync'); if(el) el.textContent = S.gsync; }
 
 function rangeOf(){
   const a = S.anchor;
+  if(S.mode === 'year')  return [new Date(a.getFullYear(), 0, 1), new Date(a.getFullYear()+1, 0, 1)];
   if(S.mode === 'month') return [new Date(a.getFullYear(), a.getMonth(), 1), new Date(a.getFullYear(), a.getMonth()+1, 1)];
   return [a, addDays(a, S.mode === 'week' ? 7 : 1)];
 }
 function anchorFor(mode, base){
   const n = base || new Date();
+  if(mode === 'year')  return new Date(n.getFullYear(), 0, 1);
   if(mode === 'month') return new Date(n.getFullYear(), n.getMonth(), 1);
   if(mode === 'week')  return monday(n);
   return mkDate(ymd(n), '00:00');
@@ -509,14 +529,15 @@ function anchorFor(mode, base){
 function setMode(m, base){ S.mode = m; S.anchor = anchorFor(m, base); render(); syncWindow(false); }
 function shiftBy(dir){
   const a = S.anchor;
-  S.anchor = S.mode === 'month'
-    ? new Date(a.getFullYear(), a.getMonth()+dir, 1)
-    : addDays(a, dir * (S.mode === 'week' ? 7 : 1));
+  S.anchor = S.mode === 'year'  ? new Date(a.getFullYear()+dir, 0, 1)
+           : S.mode === 'month' ? new Date(a.getFullYear(), a.getMonth()+dir, 1)
+           : addDays(a, dir * (S.mode === 'week' ? 7 : 1));
   render(); syncWindow(false);
 }
 
 function calLabel(){
   const a = S.anchor;
+  if(S.mode === 'year')  return `${a.getFullYear()}년`;
   if(S.mode === 'month') return `${a.getFullYear()}년 ${a.getMonth()+1}월`;
   if(S.mode === 'day')   return `${a.getFullYear()}. ${md(a)} (${DOW[a.getDay()]})`;
   return `${a.getFullYear()}. ${md(a)} – ${md(addDays(a,6))}`;
@@ -533,6 +554,7 @@ function renderCal(){
       <button data-m="day"   class="${S.mode==='day'?'on':''}">일</button>
       <button data-m="week"  class="${S.mode==='week'?'on':''}">주</button>
       <button data-m="month" class="${S.mode==='month'?'on':''}">월</button>
+      <button data-m="year"  class="${S.mode==='year'?'on':''}">년</button>
     </span>
     <button class="btn p sm" id="c-add">+ 예약</button>
   </div>`;
@@ -543,7 +565,7 @@ function renderCal(){
       + `</div></div>`;
   }
 
-  h += S.mode === 'month' ? monthHTML() : gridHTML();
+  h += S.mode === 'year' ? yearHTML() : S.mode === 'month' ? monthHTML() : gridHTML();
   $('#v-cal').innerHTML = h;
 
   $('#c-prev').onclick  = () => shiftBy(-1);
@@ -557,6 +579,41 @@ function renderCal(){
   $$('#v-cal [data-bk]').forEach(el => el.onclick = ev => { ev.stopPropagation(); bookingModal(+el.dataset.bk); });
   $$('#v-cal [data-link]').forEach(el => el.onclick = ev => { ev.stopPropagation(); linkModal(el.dataset.link); });
   $$('#v-cal .mcell').forEach(el => el.onclick = () => setMode('day', mkDate(el.dataset.day,'00:00')));
+  $$('#v-cal .ym .hd').forEach(el => el.onclick = () => setMode('month', new Date(+el.dataset.mo)));
+  $$('#v-cal .dg u[data-day]').forEach(el => el.onclick = () => setMode('day', mkDate(el.dataset.day,'00:00')));
+}
+
+/* --- 연간 --- */
+function yearHTML(){
+  const Y = S.anchor.getFullYear();
+  const cnt = {};                                   // 'YYYY-MM-DD' -> 예약 건수
+  for(const b of S.bookings){
+    const d = new Date(b.start_at);
+    if(d.getFullYear() === Y) cnt[ymd(d)] = (cnt[ymd(d)] || 0) + 1;
+  }
+  const nowY = new Date().getFullYear(), nowM = new Date().getMonth();
+
+  let h = `<div class="ygrid">`;
+  for(let mo = 0; mo < 12; mo++){
+    const first = new Date(Y, mo, 1), last = new Date(Y, mo+1, 0);
+    const lead  = (first.getDay() + 6) % 7;         // 월요일 시작
+    let total = 0, done = 0;
+    for(const b of S.bookings){
+      const d = new Date(b.start_at);
+      if(d.getFullYear() === Y && d.getMonth() === mo){ total++; if(b.status === '완료') done++; }
+    }
+    h += `<div class="ym${Y===nowY && mo===nowM ? ' cur' : ''}">
+      <div class="hd" data-mo="${+first}"><b>${mo+1}월</b><small>${total ? `${total}건 · 완료 ${done}` : '—'}</small></div>
+      <div class="dg">${DOW.slice(1).concat(DOW[0]).map(d => `<i>${d}</i>`).join('')}`;
+    for(let i = 0; i < lead; i++) h += `<u class="off"></u>`;
+    for(let d = 1; d <= last.getDate(); d++){
+      const key = `${Y}-${pad(mo+1)}-${pad(d)}`, n = cnt[key] || 0;
+      const bg = n ? ` style="background:rgba(76,141,255,${n>=3?.9:n===2?.62:.38})"` : '';
+      h += `<u class="${n?'has':''}${key===todayStr()?' today':''}" data-day="${key}"${bg} title="${n?n+'건':''}">${d}</u>`;
+    }
+    h += `</div></div>`;
+  }
+  return h + `</div>`;
 }
 
 /* --- 월간 --- */
