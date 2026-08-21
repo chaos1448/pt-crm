@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1420">
+<title>PT 고객관리</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#0f1420; --panel:#171d2c; --panel-2:#1e2536; --line:#2a3145;
+  --ink:#e8ecf5; --ink-2:#a5aec4; --ink-3:#6b7590;
+  --accent:#4c8dff; --good:#2fbf71; --warn:#f0a92e; --crit:#ef5b5b; --ghost:#4a5570;
+  --r:12px; --sh:0 2px 10px rgba(0,0,0,.35);
+}
+@media (prefers-color-scheme:light){
+  :root{
+    --bg:#f4f6fa; --panel:#fff; --panel-2:#f0f3f9; --line:#dde3ee;
+    --ink:#161d2b; --ink-2:#5a6580; --ink-3:#8b95ab;
+    --ghost:#b6bfd2; --sh:0 2px 10px rgba(20,30,60,.08);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font:14px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+a{color:var(--accent)}
+
+/* ---------- 공통 ---------- */
+.btn{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:8px 13px;font-weight:600;color:var(--ink);white-space:nowrap}
+.btn:hover{border-color:var(--ghost)}
+.btn.p{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.g{background:var(--good);border-color:var(--good);color:#fff}
+.btn.w{background:var(--warn);border-color:var(--warn);color:#191919}
+.btn.d{background:transparent;border-color:var(--crit);color:var(--crit)}
+.btn.sm{padding:5px 10px;font-size:12.5px;border-radius:7px}
+.fld{display:block;margin:0 0 11px}
+.fld>span{display:block;font-size:12px;color:var(--ink-2);margin-bottom:5px;font-weight:600}
+.fld>input,.fld>select,.fld>textarea{
+  width:100%;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 11px;outline:none
+}
+.fld>input:focus,.fld>select:focus,.fld>textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.row>.fld{flex:1;min-width:130px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:15px;box-shadow:var(--sh)}
+.muted{color:var(--ink-3)}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--panel-2);color:var(--ink-2);border:1px solid var(--line)}
+.tag.ok{background:rgba(47,191,113,.15);color:var(--good);border-color:transparent}
+.tag.warn{background:rgba(240,169,46,.16);color:var(--warn);border-color:transparent}
+.tag.crit{background:rgba(239,91,91,.16);color:var(--crit);border-color:transparent}
+h2{font-size:15px;margin:0 0 12px}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+
+/* ---------- 레이아웃 ---------- */
+header{
+  position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--line);
+  padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));display:flex;gap:10px;align-items:center;flex-wrap:wrap
+}
+.brand{font-weight:800;font-size:15px;letter-spacing:-.2px}
+nav{display:flex;gap:4px;background:var(--panel-2);border-radius:10px;padding:3px}
+nav button{padding:7px 14px;border-radius:8px;font-weight:700;font-size:13px;color:var(--ink-2)}
+nav button.on{background:var(--accent);color:#fff}
+.spacer{flex:1}
+#sync{font-size:12px;color:var(--ink-3);white-space:nowrap}
+main{padding:14px;padding-bottom:max(24px,env(safe-area-inset-bottom));max-width:1200px;margin:0 auto}
+.view{display:none}
+.view.on{display:block}
+
+/* ---------- 주간 캘린더 ---------- */
+.calbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.calbar .wk{font-weight:700;font-size:15px;min-width:140px}
+.grid{
+  display:grid;grid-template-columns:52px repeat(var(--days),minmax(0,1fr));
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden
+}
+.gh{padding:8px 4px;text-align:center;font-size:12px;font-weight:700;border-bottom:1px solid var(--line);background:var(--panel-2);color:var(--ink-2)}
+.gh.today{color:var(--accent)}
+.gh b{display:block;font-size:16px;color:var(--ink)}
+.gh.today b{color:var(--accent)}
+.gt{position:relative;border-right:1px solid var(--line)}
+.gt i{position:absolute;right:5px;font-size:11px;color:var(--ink-3);font-style:normal;transform:translateY(-6px)}
+.col{position:relative;border-right:1px solid var(--line)}
+.col:last-child{border-right:0}
+.col .hr{position:absolute;left:0;right:0;border-top:1px solid var(--line);opacity:.55}
+.col .hr.half{border-top-style:dotted;opacity:.3}
+.ev{
+  position:absolute;left:3px;right:3px;border-radius:7px;padding:3px 6px;overflow:hidden;
+  font-size:11.5px;line-height:1.25;cursor:pointer;border-left:3px solid;color:#fff
+}
+.ev b{display:block;font-size:12px}
+.ev.s예약{background:#2f5da8;border-color:#7fb0ff}
+.ev.s완료{background:#1f7a4d;border-color:#5fe0a0}
+.ev.s노쇼{background:#8d3535;border-color:#ff9b9b}
+.ev.snone{background:#4a5570;border-color:#9aa5bd}
+.slot{position:absolute;left:0;right:0;cursor:pointer}
+.slot:hover{background:rgba(76,141,255,.10)}
+.nowline{position:absolute;left:0;right:0;border-top:2px solid var(--crit);z-index:5;pointer-events:none}
+
+/* ---------- 회원 ---------- */
+.mlist{display:grid;gap:9px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.mrow{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;display:flex;gap:10px;align-items:center}
+.mrow:hover{border-color:var(--ghost)}
+.mrow .nm{font-weight:700;font-size:15px}
+.mrow .sub{font-size:12px;color:var(--ink-3)}
+.big{font-size:19px;font-weight:800;text-align:right;line-height:1.15}
+.big small{display:block;font-size:11px;font-weight:600;color:var(--ink-3)}
+.hist{max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:9px}
+.hist div{padding:8px 11px;border-bottom:1px solid var(--line);font-size:13px;display:flex;gap:8px;align-items:center}
+.hist div:last-child{border-bottom:0}
+
+/* ---------- 모달 ---------- */
+#mask{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;display:none;align-items:center;justify-content:center;padding:14px}
+#mask.on{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:480px;max-height:88vh;overflow:auto;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.modal h3{margin:0 0 14px;font-size:17px}
+.mhead{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
+
+/* ---------- 기타 ---------- */
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:600;opacity:0;transition:.22s;z-index:99;pointer-events:none;max-width:88vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%)}
+#gate{max-width:520px;margin:8vh auto;padding:16px}
+.step{display:flex;gap:11px;margin-bottom:13px;font-size:13.5px}
+.step b{flex:0 0 22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:12px}
+.unm{background:rgba(240,169,46,.1);border:1px solid var(--warn);border-radius:10px;padding:10px 12px;margin-bottom:11px;font-size:13px}
+@media(max-width:640px){
+  main{padding:10px}
+  nav button{padding:7px 11px;font-size:12.5px}
+  .brand{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="gate" style="display:none"></div>
+
+<div id="app" style="display:none">
+  <header>
+    <span class="brand">PT 고객관리</span>
+    <nav>
+      <button data-v="cal" class="on">📅 예약</button>
+      <button data-v="mem">👥 회원</button>
+      <button data-v="set">⚙️ 설정</button>
+    </nav>
+    <span class="spacer"></span>
+    <span id="sync"></span>
+    <button class="btn sm" id="btn-sync">↻ 동기화</button>
+  </header>
+  <main>
+    <section class="view on" id="v-cal"></section>
+    <section class="view" id="v-mem"></section>
+    <section class="view" id="v-set"></section>
+  </main>
+</div>
+
+<div id="mask"><div class="modal" id="modal"></div></div>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+'use strict';
+/* ============================================================
+   설정 · 상태
+   ============================================================ */
+/* ┌──────────────────────────────────────────────────────────────┐
+   │  배포용 고정 설정 — 만든 사람이 여기 3~4개만 채워 넣으면      │
+   │  실제 사용자는 접속해서 '구글 계정으로 로그인'만 누르면 됩니다. │
+   │  비워두면 첫 접속 시 설정 화면이 뜹니다.                       │
+   └──────────────────────────────────────────────────────────────┘ */
+const PRESET = {
+  sb_url : 'https://fropdvyqchmmtcbtzprk.supabase.co',
+  sb_key : 'sb_publishable_SkjkDVlzjDOYtG9MOUKaSw_qjQ13Hvp',
+  gcid   : '898610854273-jm4h1fl1i0k1uuf2gmoma2g899t7ip1l.apps.googleusercontent.com',
+  cal    : ''    // 비워두면 기본 캘린더. 전용 캘린더 쓰면 그 캘린더 ID
+};
+
+const DEF = { sb_url:'', sb_key:'', gcid:'', cal:'primary', dur:50, noshow:false, automatch:true, h0:6, h1:23 };
+const CFGK = 'ptcrm_cfg';
+const PRE  = Object.fromEntries(Object.entries(PRESET).filter(([,v]) => v && String(v).trim()));
+const cfg    = () => Object.assign({}, DEF, PRE, JSON.parse(localStorage.getItem(CFGK) || '{}'));
+const setCfg = o  => localStorage.setItem(CFGK, JSON.stringify(Object.assign({}, JSON.parse(localStorage.getItem(CFGK) || '{}'), o)));
+const preset = () => !!(PRE.sb_url && PRE.sb_key && PRE.gcid);
+
+const S = {
+  user:null, members:[], packages:[], bookings:[],
+  gevents:[], unmatched:[],
+  anchor:null, days:7, view:'cal', q:'', gsync:'', syncing:false
+};
+let sb = null;
+
+/* ============================================================
+   유틸
+   ============================================================ */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const pad = n => String(n).padStart(2,'0');
+const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const won = n => (+n||0).toLocaleString('ko-KR');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const hm  = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const md  = d => `${d.getMonth()+1}/${d.getDate()}`;
+const DOW = ['일','월','화','수','목','금','토'];
+const todayStr = () => ymd(new Date());
+
+function monday(d){ const x=new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function mkDate(dateStr, timeStr){
+  const [Y,M,D] = dateStr.split('-').map(Number);
+  const [h,m]   = timeStr.split(':').map(Number);
+  return new Date(Y, M-1, D, h, m, 0, 0);
+}
+function daysLeft(dateStr){
+  if(!dateStr) return null;
+  const a = mkDate(dateStr,'00:00'), b = mkDate(todayStr(),'00:00');
+  return Math.round((a-b)/864e5);
+}
+let toastT;
+function toast(msg, ms=2400){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('on'), ms);
+}
+function confirmDo(msg){ return window.confirm(msg); }
+
+/* ============================================================
+   Supabase
+   ============================================================ */
+function initSB(){
+  const c = cfg();
+  if(!c.sb_url || !c.sb_key) return false;
+  sb = window.supabase.createClient(c.sb_url, c.sb_key, {
+    auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+  });
+  return true;
+}
+const T = n => sb.from(n);
+
+async function loadAll(){
+  const [m,p,b] = await Promise.all([
+    T('crm_members').select('*').order('name'),
+    T('crm_packages').select('*').order('id'),
+    T('crm_bookings').select('*').order('start_at')
+  ]);
+  for(const r of [m,p,b]) if(r.error) throw new Error(r.error.message);
+  S.members = m.data || []; S.packages = p.data || []; S.bookings = b.data || [];
+}
+
+/* ============================================================
+   회원 집계
+   ============================================================ */
+const memPkgs = id => S.packages.filter(p => p.member_id === id);
+const memBks  = id => S.bookings.filter(b => b.member_id === id);
+
+function usedCount(id){
+  const c = cfg();
+  return memBks(id).filter(b => b.status === '완료' || (c.noshow && b.status === '노쇼')).length;
+}
+function totalCount(id){ return memPkgs(id).reduce((s,p)=> s + (+p.total||0), 0); }
+function remain(id){ return totalCount(id) - usedCount(id); }
+function expireOf(id){
+  const ds = memPkgs(id).map(p=>p.expire_date).filter(Boolean).sort();
+  return ds.length ? ds[ds.length-1] : null;
+}
+function memberState(id){
+  const r = remain(id), dl = daysLeft(expireOf(id));
+  if(r <= 0)                    return {k:'crit', t:'잔여 소진'};
+  if(dl !== null && dl < 0)     return {k:'crit', t:'기간 만료'};
+  if(r <= 3)                    return {k:'warn', t:`잔여 ${r}회`};
+  if(dl !== null && dl <= 14)   return {k:'warn', t:`만료 D-${dl}`};
+  return {k:'ok', t:`잔여 ${r}회`};
+}
+const memName = id => (S.members.find(m=>m.id===id)?.name) || '(삭제된 회원)';
+
+/* ============================================================
+   구글 캘린더
+   ============================================================ */
+const GSCOPE = 'https://www.googleapis.com/auth/calendar';
+let GTOK = { t:null, exp:0 }, tokenClient = null;
+
+function gReady(){ return !!(window.google && google.accounts && google.accounts.oauth2); }
+
+function requestToken(prompt){
+  return new Promise((res, rej) => {
+    if(!gReady())      return rej(new Error('구글 스크립트 로드 실패'));
+    if(!cfg().gcid)    return rej(new Error('구글 클라이언트 ID 미설정'));
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: cfg().gcid,
+      scope: GSCOPE,
+      callback: r => {
+        if(r && r.access_token){
+          GTOK = { t:r.access_token, exp: Date.now() + ((+r.expires_in||3600)-90)*1000 };
+          res(GTOK.t);
+        } else rej(new Error(r && r.error ? r.error : '토큰 발급 실패'));
+      },
+      error_callback: e => rej(new Error((e && (e.type||e.message)) || '구글 인증 취소'))
+    });
+    tokenClient.requestAccessToken({ prompt });
+  });
+}
+async function gtoken(interactive){
+  if(GTOK.t && GTOK.exp > Date.now()) return GTOK.t;
+  try { return await requestToken(''); }
+  catch(e){
+    if(!interactive) throw e;
+    return await requestToken('consent');
+  }
+}
+async function gapi(path, opt={}, interactive=false){
+  const tok  = await gtoken(interactive);
+  const url  = 'https://www.googleapis.com/calendar/v3' + path;
+  const init = Object.assign({}, opt, {
+    headers: Object.assign({ Authorization:'Bearer '+tok, 'Content-Type':'application/json' }, opt.headers||{})
+  });
+  let res = await fetch(url, init);
+  if(res.status === 401){                      // 토큰 만료 → 1회 재시도
+    GTOK = { t:null, exp:0 };
+    const t2 = await gtoken(interactive);
+    init.headers.Authorization = 'Bearer ' + t2;
+    res = await fetch(url, init);
+  }
+  if(res.status === 204) return null;
+  const j = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(j.error?.message || ('구글 API '+res.status));
+  return j;
+}
+const calPath = () => '/calendars/' + encodeURIComponent(cfg().cal || 'primary') + '/events';
+
+async function gList(from, to){
+  const q = new URLSearchParams({
+    timeMin: from.toISOString(), timeMax: to.toISOString(),
+    singleEvents:'true', orderBy:'startTime', maxResults:'250'
+  });
+  let items = [], pageToken = '';
+  do{
+    if(pageToken) q.set('pageToken', pageToken); else q.delete('pageToken');
+    const j = await gapi(calPath() + '?' + q.toString());
+    items = items.concat(j.items || []);
+    pageToken = j.nextPageToken || '';
+  } while(pageToken);
+  return items.filter(e => e.start && e.start.dateTime);   // 종일 일정 제외
+}
+function evBody(bk){
+  const nm = memName(bk.member_id);
+  return {
+    summary: `${nm} PT` + (bk.status === '노쇼' ? ' (노쇼)' : ''),
+    description: bk.memo || '',
+    start: { dateTime: new Date(bk.start_at).toISOString() },
+    end:   { dateTime: new Date(bk.end_at).toISOString() },
+    extendedProperties: { private: { ptcrm_booking: String(bk.id), ptcrm_member: String(bk.member_id) } }
+  };
+}
+async function gPush(bk){
+  if(!cfg().gcid) return null;
+  try{
+    if(bk.gcal_id){
+      await gapi(calPath() + '/' + encodeURIComponent(bk.gcal_id), { method:'PATCH', body: JSON.stringify(evBody(bk)) });
+      return bk.gcal_id;
+    }
+    const ev = await gapi(calPath(), { method:'POST', body: JSON.stringify(evBody(bk)) });
+    await T('crm_bookings').update({ gcal_id: ev.id }).eq('id', bk.id);
+    bk.gcal_id = ev.id;
+    return ev.id;
+  }catch(e){ console.warn('gPush', e); toast('구글 캘린더 반영 실패: ' + e.message, 3200); return null; }
+}
+async function gDelete(gid){
+  if(!gid || !cfg().gcid) return;
+  try{ await gapi(calPath() + '/' + encodeURIComponent(gid), { method:'DELETE' }); }
+  catch(e){ if(!/404|410|Not Found|deleted/i.test(e.message)) console.warn('gDelete', e); }
+}
+
+/* ============================================================
+   양방향 동기화 — 화면에 보이는 기간만 대조
+   ============================================================ */
+function findMemberBySummary(sum){
+  if(!sum) return null;
+  const hits = S.members.filter(m => m.name && sum.includes(m.name));
+  if(hits.length !== 1) return null;                  // 0건 또는 애매하면 수동 연결
+  return hits[0];
+}
+
+async function syncWindow(interactive){
+  const c = cfg();
+  if(!c.gcid){ S.gsync = '구글 미연동'; return; }
+  if(S.syncing) return;
+  S.syncing = true; S.gsync = '동기화 중…'; paintSync();
+
+  const from = new Date(S.anchor), to = addDays(S.anchor, S.days);
+  let items;
+  try{
+    await gtoken(interactive);
+    items = await gList(from, to);
+  }catch(e){
+    S.syncing = false; S.gsync = '⚠ ' + e.message; paintSync();
+    if(interactive) toast('구글 연동 실패: ' + e.message, 3600);
+    return;
+  }
+
+  const seenGid = new Set();
+  let linked = 0, pulled = 0, pushed = 0, removed = 0;
+  S.unmatched = [];
+
+  /* --- 구글 → 앱 --- */
+  for(const ev of items){
+    seenGid.add(ev.id);
+    const bid = ev.extendedProperties && ev.extendedProperties.private && ev.extendedProperties.private.ptcrm_booking;
+    const s = new Date(ev.start.dateTime), e = new Date(ev.end.dateTime);
+
+    if(bid){
+      const bk = S.bookings.find(x => String(x.id) === String(bid));
+      if(!bk){                                        // 앱에서 지운 예약 → 구글에서도 제거
+        await gDelete(ev.id); removed++; continue;
+      }
+      if(!bk.gcal_id){ await T('crm_bookings').update({gcal_id:ev.id}).eq('id',bk.id); bk.gcal_id = ev.id; }
+      if(+new Date(bk.start_at) !== +s || +new Date(bk.end_at) !== +e){   // 구글에서 시간 변경
+        await T('crm_bookings').update({ start_at:s.toISOString(), end_at:e.toISOString() }).eq('id', bk.id);
+        bk.start_at = s.toISOString(); bk.end_at = e.toISOString(); pulled++;
+      }
+      continue;
+    }
+
+    const m = cfg().automatch ? findMemberBySummary(ev.summary) : null;
+    if(m){                                            // 캘린더에서 만든 일정 → 예약으로 흡수
+      const { data, error } = await T('crm_bookings').insert({
+        member_id:m.id, start_at:s.toISOString(), end_at:e.toISOString(),
+        status:'예약', gcal_id:ev.id, memo:'구글 캘린더에서 생성'
+      }).select().single();
+      if(!error && data){
+        S.bookings.push(data); linked++;
+        await gapi(calPath()+'/'+encodeURIComponent(ev.id), {
+          method:'PATCH',
+          body: JSON.stringify({ extendedProperties:{ private:{ ptcrm_booking:String(data.id), ptcrm_member:String(m.id) } } })
+        }).catch(()=>{});
+      }
+    } else {
+      S.unmatched.push({ id:ev.id, summary: ev.summary || '(제목 없음)', s, e });
+    }
+  }
+
+  /* --- 앱 → 구글 --- */
+  const inWin = S.bookings.filter(b => { const t = +new Date(b.start_at); return t >= +from && t < +to; });
+  for(const bk of inWin){
+    if(!bk.gcal_id){ if(await gPush(bk)) pushed++; }
+    else if(!seenGid.has(bk.gcal_id)){               // 구글에서 삭제됨 → 앱에서도 삭제
+      await T('crm_bookings').delete().eq('id', bk.id);
+      S.bookings = S.bookings.filter(x => x.id !== bk.id);
+      removed++;
+    }
+  }
+
+  const bits = [];
+  if(linked)  bits.push(`캘린더→앱 ${linked}건 등록`);
+  if(pulled)  bits.push(`시간변경 ${pulled}건`);
+  if(pushed)  bits.push(`앱→캘린더 ${pushed}건`);
+  if(removed) bits.push(`삭제 ${removed}건`);
+  S.syncing = false;
+  S.gsync = '✓ ' + hm(new Date()) + (bits.length ? ' · ' + bits.join(' · ') : '');
+  if(bits.length) toast(bits.join(' · '));
+  render();
+}
+
+/* ============================================================
+   렌더 — 예약(주간)
+   ============================================================ */
+function paintSync(){ const el = $('#sync'); if(el) el.textContent = S.gsync; }
+
+function renderCal(){
+  const c = cfg(), H0 = +c.h0, H1 = +c.h1, PXH = 52, H = (H1 - H0) * PXH;
+  const days = S.days, a = S.anchor;
+  const last = addDays(a, days-1);
+  const label = days === 1
+    ? `${a.getFullYear()}. ${md(a)} (${DOW[a.getDay()]})`
+    : `${a.getFullYear()}. ${md(a)} – ${md(last)}`;
+
+  let h = `<div class="calbar">
+    <button class="btn sm" id="c-prev">◀</button>
+    <button class="btn sm" id="c-today">오늘</button>
+    <button class="btn sm" id="c-next">▶</button>
+    <span class="wk">${label}</span>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn sm" id="c-mode">${days===7?'일간 보기':'주간 보기'}</button>
+    <button class="btn p sm" id="c-add">+ 예약</button>
+  </div>`;
+
+  if(S.unmatched.length){
+    h += `<div class="unm"><b>🔗 구글 캘린더에만 있는 일정 ${S.unmatched.length}건</b> — 회원과 연결하면 출결로 잡힙니다.<div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap">`
+      + S.unmatched.map(u => `<button class="btn sm" data-link="${esc(u.id)}">${md(u.s)} ${hm(u.s)} · ${esc(u.summary)}</button>`).join('')
+      + `</div></div>`;
+  }
+
+  h += `<div class="grid" style="--days:${days}"><div class="gh"></div>`;
+  for(let i=0;i<days;i++){
+    const d = addDays(a,i), t = ymd(d) === todayStr();
+    h += `<div class="gh${t?' today':''}">${DOW[d.getDay()]}<b>${d.getDate()}</b></div>`;
+  }
+  h += `<div class="gt" style="height:${H}px">`;
+  for(let hh=H0; hh<H1; hh++) h += `<i style="top:${(hh-H0)*PXH}px">${pad(hh)}</i>`;
+  h += `</div>`;
+
+  for(let i=0;i<days;i++){
+    const d = addDays(a,i), key = ymd(d);
+    h += `<div class="col" data-day="${key}" style="height:${H}px">`;
+    for(let hh=H0; hh<H1; hh++){
+      const y = (hh-H0)*PXH;
+      h += `<div class="hr" style="top:${y}px"></div><div class="hr half" style="top:${y+PXH/2}px"></div>`;
+      h += `<div class="slot" data-t="${pad(hh)}:00" style="top:${y}px;height:${PXH/2}px"></div>`;
+      h += `<div class="slot" data-t="${pad(hh)}:30" style="top:${y+PXH/2}px;height:${PXH/2}px"></div>`;
+    }
+    if(key === todayStr()){
+      const n = new Date(), off = (n.getHours()+n.getMinutes()/60 - H0)*PXH;
+      if(off >= 0 && off <= H) h += `<div class="nowline" style="top:${off}px"></div>`;
+    }
+    const list = S.bookings.filter(b => ymd(new Date(b.start_at)) === key)
+                           .sort((x,y)=> +new Date(x.start_at) - +new Date(y.start_at));
+    for(const b of list){
+      const s = new Date(b.start_at), e = new Date(b.end_at);
+      const top = (s.getHours()+s.getMinutes()/60 - H0)*PXH;
+      const hgt = Math.max(22, ((e-s)/36e5)*PXH - 2);
+      if(top < -30 || top > H) continue;
+      h += `<div class="ev s${b.status}" data-bk="${b.id}" style="top:${top}px;height:${hgt}px">
+              <b>${esc(memName(b.member_id))}</b>${hm(s)}–${hm(e)}${b.status!=='예약'?' · '+b.status:''}
+            </div>`;
+    }
+    for(const u of S.unmatched.filter(u => ymd(u.s) === key)){
+      const top = (u.s.getHours()+u.s.getMinutes()/60 - H0)*PXH;
+      const hgt = Math.max(22, ((u.e-u.s)/36e5)*PXH - 2);
+      if(top < -30 || top > H) continue;
+      h += `<div class="ev snone" data-link="${esc(u.id)}" style="top:${top}px;height:${hgt}px">
+              <b>${esc(u.summary)}</b>미연결</div>`;
+    }
+    h += `</div>`;
+  }
+  h += `</div>`;
+  $('#v-cal').innerHTML = h;
+
+  $('#c-prev').onclick  = () => { S.anchor = addDays(S.anchor, -S.days); render(); syncWindow(false); };
+  $('#c-next').onclick  = () => { S.anchor = addDays(S.anchor,  S.days); render(); syncWindow(false); };
+  $('#c-today').onclick = () => { S.anchor = S.days===7 ? monday(new Date()) : mkDate(todayStr(),'00:00'); render(); syncWindow(false); };
+  $('#c-mode').onclick  = () => { S.days = S.days===7?1:7; S.anchor = S.days===7 ? monday(new Date()) : mkDate(todayStr(),'00:00'); render(); syncWindow(false); };
+  $('#c-add').onclick   = () => bookingModal(null, todayStr(), '10:00');
+  $$('#v-cal .slot').forEach(el => el.onclick = ev => {
+    ev.stopPropagation();
+    bookingModal(null, el.closest('.col').dataset.day, el.dataset.t);
+  });
+  $$('#v-cal .ev[data-bk]').forEach(el => el.onclick = ev => {
+    ev.stopPropagation(); bookingModal(+el.dataset.bk);
+  });
+  $$('#v-cal [data-link]').forEach(el => el.onclick = ev => {
+    ev.stopPropagation(); linkModal(el.dataset.link);
+  });
+}
+
+/* ============================================================
+   렌더 — 회원
+   ============================================================ */
+function renderMem(){
+  const q = S.q.trim().toLowerCase();
+  const list = S.members.filter(m => !q || (m.name+' '+(m.phone||'')+' '+(m.trainer||'')).toLowerCase().includes(q));
+  const act = S.members.filter(m=>m.active !== false).length;
+  const low = S.members.filter(m => memberState(m.id).k !== 'ok').length;
+
+  let h = `<div class="row" style="margin-bottom:12px">
+    <input id="q" placeholder="이름 · 연락처 · 트레이너 검색" value="${esc(S.q)}"
+      style="flex:1;min-width:180px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 12px;outline:none">
+    <button class="btn p" id="m-add">+ 회원 등록</button>
+  </div>
+  <div class="row" style="margin-bottom:12px">
+    <span class="tag">전체 ${S.members.length}명</span>
+    <span class="tag ok">활성 ${act}명</span>
+    <span class="tag warn">재등록/만료 임박 ${low}명</span>
+  </div>`;
+
+  if(!list.length){
+    h += `<div class="card muted" style="text-align:center;padding:34px">${S.members.length ? '검색 결과가 없습니다.' : '아직 등록된 회원이 없습니다. <b>+ 회원 등록</b>으로 시작하세요.'}</div>`;
+  } else {
+    h += `<div class="mlist">` + list.map(m => {
+      const st = memberState(m.id), ex = expireOf(m.id), dl = daysLeft(ex);
+      return `<div class="mrow" data-m="${m.id}">
+        <div style="flex:1;min-width:0">
+          <div class="nm">${esc(m.name)} ${m.trainer?`<span class="tag" style="font-weight:600">${esc(m.trainer)}</span>`:''}</div>
+          <div class="sub">${esc(m.phone||'연락처 없음')}${ex?` · 만료 ${ex}${dl!==null?` (D${dl>=0?'-'+dl:'+'+(-dl)})`:''}`:''}</div>
+        </div>
+        <div class="big" style="color:var(--${st.k==='ok'?'good':st.k==='warn'?'warn':'crit'})">
+          ${remain(m.id)}<small>/ ${totalCount(m.id)}회</small>
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+  }
+  $('#v-mem').innerHTML = h;
+  const qi = $('#q');
+  qi.oninput = () => { S.q = qi.value; renderMem(); const n=$('#q'); n.focus(); n.setSelectionRange(n.value.length,n.value.length); };
+  $('#m-add').onclick = () => memberModal(null);
+  $$('#v-mem .mrow').forEach(el => el.onclick = () => detailModal(+el.dataset.m));
+}
+
+/* ============================================================
+   렌더 — 설정
+   ============================================================ */
+function renderSet(){
+  const c = cfg();
+  $('#v-set').innerHTML = `
+  <div class="card" style="margin-bottom:12px">
+    <h2>🔗 연결</h2>
+    <label class="fld"><span>Supabase Project URL</span><input id="s-url" value="${esc(c.sb_url)}" placeholder="https://xxxx.supabase.co"></label>
+    <label class="fld"><span>Supabase anon key</span><input id="s-key" value="${esc(c.sb_key)}" placeholder="eyJhbGciOi..."></label>
+    <label class="fld"><span>Google OAuth 클라이언트 ID</span><input id="s-gcid" value="${esc(c.gcid)}" placeholder="....apps.googleusercontent.com"></label>
+    <div class="row">
+      <label class="fld" style="flex:1"><span>연동할 캘린더</span>
+        <select id="s-cal"><option value="${esc(c.cal)}">${esc(c.cal)}</option></select></label>
+      <button class="btn sm" id="s-loadcal" style="margin-top:6px">캘린더 목록 불러오기</button>
+    </div>
+    <button class="btn p" id="s-save">저장 후 새로고침</button>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <h2>⚙️ 동작</h2>
+    <div class="row">
+      <label class="fld"><span>기본 수업시간(분)</span><input id="s-dur" type="number" min="10" step="5" value="${c.dur}"></label>
+      <label class="fld"><span>표시 시작시각</span><input id="s-h0" type="number" min="0" max="23" value="${c.h0}"></label>
+      <label class="fld"><span>표시 종료시각</span><input id="s-h1" type="number" min="1" max="24" value="${c.h1}"></label>
+    </div>
+    <label class="fld" style="display:flex;gap:9px;align-items:center">
+      <input type="checkbox" id="s-noshow" ${c.noshow?'checked':''} style="width:auto"><span style="margin:0">노쇼도 잔여횟수에서 차감</span></label>
+    <label class="fld" style="display:flex;gap:9px;align-items:center">
+      <input type="checkbox" id="s-auto" ${c.automatch?'checked':''} style="width:auto"><span style="margin:0">캘린더 일정 제목에 회원 이름이 있으면 자동 연결</span></label>
+    <button class="btn p" id="s-save2">저장</button>
+  </div>
+
+  <div class="card">
+    <h2>👤 계정</h2>
+    <p class="muted" style="margin:0 0 12px">${esc(S.user?.email || '')}</p>
+    <div class="row">
+      <button class="btn" id="s-gauth">구글 캘린더 권한 다시 요청</button>
+      <button class="btn d" id="s-out">로그아웃</button>
+    </div>
+  </div>`;
+
+  $('#s-save').onclick = () => {
+    setCfg({ sb_url:$('#s-url').value.trim().replace(/\/+$/,''), sb_key:$('#s-key').value.trim(),
+             gcid:$('#s-gcid').value.trim(), cal:$('#s-cal').value });
+    location.reload();
+  };
+  $('#s-save2').onclick = () => {
+    setCfg({ dur:+$('#s-dur').value||50, h0:+$('#s-h0').value||6, h1:+$('#s-h1').value||23,
+             noshow:$('#s-noshow').checked, automatch:$('#s-auto').checked });
+    toast('저장했습니다'); render();
+  };
+  $('#s-loadcal').onclick = async () => {
+    setCfg({ gcid:$('#s-gcid').value.trim() });
+    try{
+      const j = await gapi('/users/me/calendarList', {}, true);
+      const sel = $('#s-cal');
+      sel.innerHTML = (j.items||[]).map(x => `<option value="${esc(x.id)}"${x.id===c.cal?' selected':''}>${esc(x.summary)}${x.primary?' (기본)':''}</option>`).join('');
+      toast('캘린더 ' + (j.items||[]).length + '개');
+    }catch(e){ toast('불러오기 실패: ' + e.message, 3600); }
+  };
+  $('#s-gauth').onclick = async () => {
+    try{ GTOK={t:null,exp:0}; await requestToken('consent'); toast('권한 승인 완료'); syncWindow(true); }
+    catch(e){ toast(e.message, 3600); }
+  };
+  $('#s-out').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+}
+
+/* ============================================================
+   모달
+   ============================================================ */
+function closeModal(){ $('#mask').classList.remove('on'); $('#modal').innerHTML=''; }
+function openModal(html){ $('#modal').innerHTML = html; $('#mask').classList.add('on'); }
+$('#mask').onclick = e => { if(e.target.id === 'mask') closeModal(); };
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+
+function memberOptions(sel){
+  return S.members.map(m => `<option value="${m.id}"${+sel===m.id?' selected':''}>${esc(m.name)} (잔여 ${remain(m.id)})</option>`).join('');
+}
+
+/* --- 회원 등록/수정 --- */
+function memberModal(id){
+  const m = id ? S.members.find(x=>x.id===id) : null;
+  openModal(`<h3>${m?'회원 정보 수정':'회원 등록'}</h3>
+    <label class="fld"><span>이름 *</span><input id="f-name" value="${esc(m?.name||'')}"></label>
+    <div class="row">
+      <label class="fld"><span>연락처</span><input id="f-phone" value="${esc(m?.phone||'')}" placeholder="010-0000-0000"></label>
+      <label class="fld"><span>담당 트레이너</span><input id="f-tr" value="${esc(m?.trainer||'')}"></label>
+    </div>
+    <label class="fld"><span>메모</span><textarea id="f-memo" rows="2">${esc(m?.memo||'')}</textarea></label>
+    <div class="row" style="justify-content:flex-end;margin-top:6px">
+      ${m?'<button class="btn d" id="f-del">삭제</button>':''}
+      <button class="btn" id="f-cancel">취소</button>
+      <button class="btn p" id="f-ok">${m?'저장':'등록'}</button>
+    </div>`);
+  $('#f-cancel').onclick = closeModal;
+  $('#f-ok').onclick = async () => {
+    const name = $('#f-name').value.trim();
+    if(!name) return toast('이름을 입력하세요');
+    const row = { name, phone:$('#f-phone').value.trim(), trainer:$('#f-tr').value.trim(), memo:$('#f-memo').value.trim() };
+    const r = m ? await T('crm_members').update(row).eq('id', m.id).select().single()
+                : await T('crm_members').insert(row).select().single();
+    if(r.error) return toast('오류: ' + r.error.message, 3600);
+    if(m) Object.assign(m, r.data); else S.members.push(r.data);
+    S.members.sort((a,b)=> a.name.localeCompare(b.name,'ko'));
+    closeModal(); render(); toast(m?'저장했습니다':'등록했습니다');
+    if(!m) packageModal(r.data.id);
+  };
+  if(m) $('#f-del').onclick = async () => {
+    if(!confirmDo(`${m.name} 회원과 모든 예약·결제 기록을 삭제합니다. 계속할까요?`)) return;
+    for(const b of memBks(m.id)) await gDelete(b.gcal_id);
+    const r = await T('crm_members').delete().eq('id', m.id);
+    if(r.error) return toast('오류: ' + r.error.message, 3600);
+    S.members  = S.members.filter(x=>x.id!==m.id);
+    S.packages = S.packages.filter(x=>x.member_id!==m.id);
+    S.bookings = S.bookings.filter(x=>x.member_id!==m.id);
+    closeModal(); render(); toast('삭제했습니다');
+  };
+}
+
+/* --- 회차 등록(결제) --- */
+function packageModal(memberId){
+  const t = todayStr(), ex = ymd(addDays(new Date(), 180));
+  openModal(`<h3>회차 등록 — ${esc(memName(memberId))}</h3>
+    <div class="row">
+      <label class="fld"><span>등록 회차 *</span><input id="p-total" type="number" min="1" value="30"></label>
+      <label class="fld"><span>결제 금액(원)</span><input id="p-price" type="number" min="0" step="10000" value="0"></label>
+    </div>
+    <div class="row">
+      <label class="fld"><span>결제수단</span><select id="p-method"><option>카드</option><option>현금</option><option>계좌이체</option><option>기타</option></select></label>
+      <label class="fld"><span>시작일</span><input id="p-start" type="date" value="${t}"></label>
+      <label class="fld"><span>만료일</span><input id="p-exp" type="date" value="${ex}"></label>
+    </div>
+    <label class="fld"><span>메모</span><input id="p-memo" placeholder="예: 재등록 3회차, 이벤트가"></label>
+    <div class="row" style="justify-content:flex-end;margin-top:6px">
+      <button class="btn" id="p-cancel">취소</button><button class="btn p" id="p-ok">등록</button>
+    </div>`);
+  $('#p-cancel').onclick = () => { closeModal(); detailModal(memberId); };
+  $('#p-ok').onclick = async () => {
+    const total = +$('#p-total').value || 0;
+    if(total < 1) return toast('회차를 입력하세요');
+    const r = await T('crm_packages').insert({
+      member_id:memberId, total, price:+$('#p-price').value||0, method:$('#p-method').value,
+      start_date:$('#p-start').value||null, expire_date:$('#p-exp').value||null, memo:$('#p-memo').value.trim()
+    }).select().single();
+    if(r.error) return toast('오류: ' + r.error.message, 3600);
+    S.packages.push(r.data); closeModal(); render(); toast(`${total}회 등록 완료`);
+    detailModal(memberId);
+  };
+}
+
+/* --- 회원 상세 --- */
+function detailModal(id){
+  const m = S.members.find(x=>x.id===id); if(!m) return;
+  const st = memberState(id), ex = expireOf(id), dl = daysLeft(ex);
+  const pk = memPkgs(id).slice().reverse();
+  const bk = memBks(id).slice().sort((a,b)=> +new Date(b.start_at) - +new Date(a.start_at)).slice(0,30);
+  const paid = pk.reduce((s,p)=> s + (+p.price||0), 0);
+
+  openModal(`<div class="mhead">
+      <div style="flex:1">
+        <h3 style="margin:0">${esc(m.name)}</h3>
+        <div class="muted" style="font-size:13px">${esc(m.phone||'연락처 없음')}${m.trainer?' · '+esc(m.trainer):''}</div>
+      </div>
+      <span class="tag ${st.k}">${st.t}</span>
+    </div>
+
+    <div class="row" style="gap:8px;margin-bottom:14px">
+      <div class="card" style="flex:1;min-width:88px;padding:11px"><div class="muted" style="font-size:11px">잔여</div>
+        <div style="font-size:24px;font-weight:800;color:var(--${st.k==='ok'?'good':st.k==='warn'?'warn':'crit'})">${remain(id)}<span style="font-size:13px;color:var(--ink-3)">회</span></div></div>
+      <div class="card" style="flex:1;min-width:88px;padding:11px"><div class="muted" style="font-size:11px">사용 / 등록</div>
+        <div style="font-size:24px;font-weight:800">${usedCount(id)}<span style="font-size:13px;color:var(--ink-3)">/${totalCount(id)}</span></div></div>
+      <div class="card" style="flex:1;min-width:88px;padding:11px"><div class="muted" style="font-size:11px">만료일</div>
+        <div style="font-size:15px;font-weight:700;padding-top:6px">${ex||'—'}${dl!==null?`<br><span class="muted" style="font-size:11px">D${dl>=0?'-'+dl:'+'+(-dl)}</span>`:''}</div></div>
+    </div>
+
+    ${m.memo?`<div class="card" style="padding:10px 12px;margin-bottom:12px;font-size:13px">📝 ${esc(m.memo)}</div>`:''}
+
+    <div class="row" style="margin-bottom:14px">
+      <button class="btn p" id="d-book">+ 예약 잡기</button>
+      <button class="btn g" id="d-pkg">+ 회차 등록</button>
+      <button class="btn" id="d-edit">정보 수정</button>
+    </div>
+
+    <h2 style="font-size:13px">💳 결제 · 등록 이력 (누적 ${won(paid)}원)</h2>
+    <div class="hist" style="margin-bottom:14px">${
+      pk.length ? pk.map(p=>`<div>
+        <b>${p.total}회</b><span class="muted">${p.start_date||''} ~ ${p.expire_date||''}</span>
+        <span style="flex:1"></span><span>${won(p.price)}원</span>
+        <span class="tag">${esc(p.method||'-')}</span>
+        <button class="btn sm d" data-delpkg="${p.id}">✕</button></div>`).join('')
+        : '<div class="muted">등록 이력이 없습니다.</div>'}</div>
+
+    <h2 style="font-size:13px">📋 출결 이력</h2>
+    <div class="hist">${
+      bk.length ? bk.map(b=>{ const s=new Date(b.start_at);
+        const col = b.status==='완료'?'ok':b.status==='노쇼'?'crit':'';
+        return `<div><span>${ymd(s)} (${DOW[s.getDay()]}) ${hm(s)}</span><span style="flex:1"></span>
+          <span class="tag ${col}">${b.status}</span>
+          <button class="btn sm" data-openbk="${b.id}">보기</button></div>`; }).join('')
+        : '<div class="muted">예약 이력이 없습니다.</div>'}</div>
+
+    <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" id="d-close">닫기</button></div>`);
+
+  $('#d-close').onclick = closeModal;
+  $('#d-edit').onclick  = () => { closeModal(); memberModal(id); };
+  $('#d-pkg').onclick   = () => { closeModal(); packageModal(id); };
+  $('#d-book').onclick  = () => { closeModal(); bookingModal(null, todayStr(), '10:00', id); };
+  $$('[data-openbk]').forEach(el => el.onclick = () => { closeModal(); bookingModal(+el.dataset.openbk); });
+  $$('[data-delpkg]').forEach(el => el.onclick = async () => {
+    if(!confirmDo('이 등록 이력을 삭제할까요? 잔여 회차가 줄어듭니다.')) return;
+    const r = await T('crm_packages').delete().eq('id', +el.dataset.delpkg);
+    if(r.error) return toast('오류: ' + r.error.message, 3600);
+    S.packages = S.packages.filter(x => x.id !== +el.dataset.delpkg);
+    render(); detailModal(id);
+  });
+}
+
+/* --- 예약 생성 / 상세 --- */
+function bookingModal(bkId, dateStr, timeStr, presetMember){
+  const c = cfg();
+  const b = bkId ? S.bookings.find(x=>x.id===bkId) : null;
+  const s = b ? new Date(b.start_at) : mkDate(dateStr, timeStr);
+  const dur = b ? Math.round((new Date(b.end_at) - s)/60000) : +c.dur;
+  const mid = b ? b.member_id : (presetMember || (S.members[0] && S.members[0].id));
+
+  if(!S.members.length){
+    openModal(`<h3>회원이 없습니다</h3><p class="muted">예약을 잡으려면 회원을 먼저 등록하세요.</p>
+      <div class="row" style="justify-content:flex-end"><button class="btn" id="b-cancel">닫기</button>
+      <button class="btn p" id="b-new">회원 등록</button></div>`);
+    $('#b-cancel').onclick = closeModal;
+    $('#b-new').onclick = () => { closeModal(); memberModal(null); };
+    return;
+  }
+
+  const rem = mid ? remain(mid) : 0;
+  openModal(`<h3>${b?'예약 상세':'예약 잡기'}</h3>
+    ${b && rem<=0 ? '<div class="unm" style="border-color:var(--crit);background:rgba(239,91,91,.1)">⚠ 잔여 회차가 없습니다. 재등록이 필요합니다.</div>' : ''}
+    <label class="fld"><span>회원 *</span><select id="b-mem">${memberOptions(mid)}</select></label>
+    <div class="row">
+      <label class="fld"><span>날짜</span><input id="b-date" type="date" value="${ymd(s)}"></label>
+      <label class="fld"><span>시작</span><input id="b-time" type="time" step="300" value="${hm(s)}"></label>
+      <label class="fld"><span>시간(분)</span><input id="b-dur" type="number" min="10" step="5" value="${dur}"></label>
+    </div>
+    <label class="fld"><span>메모</span><input id="b-memo" value="${esc(b?.memo||'')}"></label>
+    ${b?`<div class="row" style="margin:4px 0 12px">
+      <button class="btn ${b.status==='완료'?'g':''}" id="b-done">✅ 출석 완료${b.status==='완료'?' (적용됨)':''}</button>
+      <button class="btn ${b.status==='노쇼'?'w':''}" id="b-no">🚫 노쇼</button>
+      <button class="btn" id="b-reset">↩ 예약 상태로</button>
+    </div>
+    <p class="muted" style="font-size:12px;margin:0 0 12px">출석 완료로 바꾸면 잔여 회차가 1회 차감됩니다${cfg().noshow?' (노쇼도 차감 설정됨)':' (노쇼는 차감되지 않음)'}.</p>`:''}
+    <div class="row" style="justify-content:flex-end;margin-top:6px">
+      ${b?'<button class="btn d" id="b-del">삭제</button>':''}
+      <button class="btn" id="b-cancel">닫기</button>
+      <button class="btn p" id="b-ok">${b?'저장':'예약'}</button>
+    </div>`);
+
+  $('#b-cancel').onclick = closeModal;
+  $('#b-ok').onclick = async () => {
+    const memId = +$('#b-mem').value;
+    const st = mkDate($('#b-date').value, $('#b-time').value);
+    const en = new Date(+st + (+$('#b-dur').value||50)*60000);
+    if(isNaN(+st)) return toast('날짜/시간을 확인하세요');
+    if(!b && remain(memId) <= 0 && !confirmDo(`${memName(memId)} 회원은 잔여 회차가 없습니다. 그래도 예약할까요?`)) return;
+    const row = { member_id:memId, start_at:st.toISOString(), end_at:en.toISOString(), memo:$('#b-memo').value.trim() };
+    const r = b ? await T('crm_bookings').update(row).eq('id', b.id).select().single()
+                : await T('crm_bookings').insert(Object.assign({status:'예약'}, row)).select().single();
+    if(r.error) return toast('오류: ' + r.error.message, 3600);
+    if(b) Object.assign(b, r.data); else S.bookings.push(r.data);
+    closeModal(); render();
+    await gPush(b || r.data);
+    render(); toast(b?'저장했습니다':'예약했습니다');
+  };
+  if(b){
+    const setStatus = async st => {
+      const r = await T('crm_bookings').update({status:st}).eq('id', b.id).select().single();
+      if(r.error) return toast('오류: ' + r.error.message, 3600);
+      Object.assign(b, r.data); closeModal(); render(); await gPush(b);
+      const d = st==='완료' || (cfg().noshow && st==='노쇼');
+      toast(`${memName(b.member_id)} · ${st}${d?` → 잔여 ${remain(b.member_id)}회`:' (차감 없음)'}`, 3000);
+    };
+    $('#b-done').onclick  = () => setStatus('완료');
+    $('#b-no').onclick    = () => setStatus('노쇼');
+    $('#b-reset').onclick = () => setStatus('예약');
+    $('#b-del').onclick   = async () => {
+      if(!confirmDo('이 예약을 삭제할까요? 구글 캘린더에서도 사라집니다.')) return;
+      const gid = b.gcal_id;
+      const r = await T('crm_bookings').delete().eq('id', b.id);
+      if(r.error) return toast('오류: ' + r.error.message, 3600);
+      S.bookings = S.bookings.filter(x=>x.id!==b.id);
+      closeModal(); render(); await gDelete(gid); toast('삭제했습니다');
+    };
+  }
+}
+
+/* --- 미연결 캘린더 일정 → 회원 연결 --- */
+function linkModal(gid){
+  const u = S.unmatched.find(x=>x.id===gid); if(!u) return;
+  if(!S.members.length){ toast('먼저 회원을 등록하세요'); return; }
+  openModal(`<h3>일정을 회원과 연결</h3>
+    <div class="card" style="padding:11px;margin-bottom:13px">
+      <b>${esc(u.summary)}</b><div class="muted" style="font-size:13px">${ymd(u.s)} ${hm(u.s)} – ${hm(u.e)}</div></div>
+    <label class="fld"><span>회원 선택</span><select id="l-mem">${memberOptions(null)}</select></label>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" id="l-cancel">취소</button><button class="btn p" id="l-ok">연결</button></div>`);
+  $('#l-cancel').onclick = closeModal;
+  $('#l-ok').onclick = async () => {
+    const mid = +$('#l-mem').value;
+    const r = await T('crm_bookings').insert({
+      member_id:mid, start_at:u.s.toISOString(), end_at:u.e.toISOString(),
+      status:'예약', gcal_id:u.id, memo:'구글 캘린더에서 연결'
+    }).select().single();
+    if(r.error) return toast('오류: ' + r.error.message, 3600);
+    S.bookings.push(r.data);
+    S.unmatched = S.unmatched.filter(x=>x.id!==gid);
+    await gapi(calPath()+'/'+encodeURIComponent(gid), { method:'PATCH',
+      body: JSON.stringify({ extendedProperties:{ private:{ ptcrm_booking:String(r.data.id), ptcrm_member:String(mid) } } })
+    }).catch(()=>{});
+    closeModal(); render(); toast(`${memName(mid)} 예약으로 연결했습니다`);
+  };
+}
+
+/* ============================================================
+   라우팅 · 부팅
+   ============================================================ */
+function render(){
+  $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
+  $$('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + S.view));
+  if(S.view === 'cal') renderCal();
+  if(S.view === 'mem') renderMem();
+  if(S.view === 'set') renderSet();
+  paintSync();
+}
+$$('nav button').forEach(b => b.onclick = () => { S.view = b.dataset.v; render(); });
+$('#btn-sync').onclick = () => syncWindow(true);
+
+function gateHTML(msg){
+  const c = cfg();
+  if(preset()) return `<div class="card" style="text-align:center;padding:30px 22px">
+    <div style="font-size:44px;line-height:1;margin-bottom:10px">📅</div>
+    <h2 style="font-size:19px;margin-bottom:6px">PT 고객관리</h2>
+    <p class="muted" style="margin:0 0 20px;font-size:13.5px">구글 계정으로 로그인하면 시작됩니다.<br>캘린더 권한을 허용해 주세요.</p>
+    ${msg?`<div class="unm" style="text-align:left">${msg}</div>`:''}
+    <button class="btn p" id="g-login" style="width:100%;padding:12px">구글 계정으로 로그인</button>
+    <p class="muted" style="font-size:11.5px;margin:18px 0 0">문제가 있으면 관리자에게 문의하세요.</p>
+    <button class="btn sm" id="g-manual" style="margin-top:10px;opacity:.45">수동 설정</button>
+  </div>`;
+  return setupHTML(msg);
+}
+function setupHTML(msg){
+  const c = cfg();
+  return `<div class="card">
+    <h2>PT 고객관리 — 최초 설정</h2>
+    ${msg?`<div class="unm">${msg}</div>`:''}
+    <div class="step"><b>1</b><div>Supabase에서 <code>schema.sql</code>을 실행한 뒤, Project URL과 anon key를 붙여넣으세요.</div></div>
+    <label class="fld"><span>Supabase Project URL</span><input id="g-url" value="${esc(c.sb_url)}" placeholder="https://xxxx.supabase.co"></label>
+    <label class="fld"><span>Supabase anon key</span><input id="g-key" value="${esc(c.sb_key)}" placeholder="eyJhbGciOi..."></label>
+    <div class="step"><b>2</b><div>Google Cloud에서 만든 OAuth 클라이언트 ID를 붙여넣으세요. (캘린더 연동용)</div></div>
+    <label class="fld"><span>Google OAuth 클라이언트 ID</span><input id="g-cid" value="${esc(c.gcid)}" placeholder="....apps.googleusercontent.com"></label>
+    <button class="btn p" id="g-save">저장하고 계속</button>
+    <hr><div class="step"><b>3</b><div>구글 계정으로 로그인하면 시작됩니다.</div></div>
+    <button class="btn p" id="g-login" ${(!c.sb_url||!c.sb_key)?'disabled style="opacity:.4"':''}>구글 계정으로 로그인</button>
+  </div>`;
+}
+function showGate(msg){
+  $('#app').style.display = 'none';
+  const g = $('#gate'); g.style.display = 'block'; g.innerHTML = gateHTML(msg);
+  const mb = $('#g-manual');
+  if(mb) mb.onclick = () => { g.innerHTML = setupHTML(msg); bindGate(g); };
+  bindGate(g);
+}
+function bindGate(g){
+  if($('#g-save')) $('#g-save').onclick = () => {
+    setCfg({ sb_url:$('#g-url').value.trim().replace(/\/+$/,''), sb_key:$('#g-key').value.trim(), gcid:$('#g-cid').value.trim() });
+    location.reload();
+  };
+  const lb = $('#g-login');
+  if(lb) lb.onclick = async () => {
+    if(!sb && !initSB()) return toast('Supabase 정보를 먼저 저장하세요');
+    const { error } = await sb.auth.signInWithOAuth({
+      provider:'google',
+      options:{ scopes:GSCOPE, redirectTo:location.href.split('#')[0].split('?')[0],
+                queryParams:{ access_type:'offline', prompt:'consent' } }
+    });
+    if(error) toast('로그인 실패: ' + error.message, 4000);
+  };
+}
+
+async function boot(){
+  if(!initSB()) return showGate('');
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session) return showGate('');
+  S.user = session.user;
+  if(session.provider_token) GTOK = { t:session.provider_token, exp: Date.now() + 50*60*1000 };
+
+  $('#gate').style.display = 'none';
+  $('#app').style.display  = 'block';
+  S.anchor = monday(new Date());
+  if(window.innerWidth < 700) { S.days = 1; S.anchor = mkDate(todayStr(),'00:00'); }
+
+  try{ await loadAll(); }
+  catch(e){ return showGate('데이터를 읽지 못했습니다: ' + esc(e.message) + '<br>schema.sql 실행 여부와 키를 확인하세요.'); }
+
+  render();
+  setTimeout(() => syncWindow(false), 700);
+  setInterval(() => { if(!document.hidden && S.view==='cal') syncWindow(false); }, 180000);
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) syncWindow(false); });
+}
+boot();
+</script>
+</body>
+</html>
